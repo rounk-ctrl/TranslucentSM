@@ -214,14 +214,6 @@ int main()
         std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
     }
     RegCloseKey(subKey);
-    /*
-    if (!IsUserAnAdmin())
-    {
-        std::cout << "\n Run this app as Administrator again.\n";
-        RegCloseKey(subKey);
-        return 0;
-    }
-    */
     SECURITY_ATTRIBUTES st;
     st.bInheritHandle = FALSE;
     st.lpSecurityDescriptor = sd;
@@ -241,7 +233,8 @@ int main()
     {
         std::cout << "\n- Changed TAPdll.dll permissions";
     }
-    std::cout << "\n\n";
     InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
+	std::cout << "\n- Success!"; // ig always succeeds
+	std::cout << "\n\n";
     return 0;
 }

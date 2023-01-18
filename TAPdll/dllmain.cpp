@@ -16,6 +16,10 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 
+DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0;
+typedef void (WINAPI* RtlGetVersion_FUNC) (OSVERSIONINFOEXW*);
+OSVERSIONINFOEX os;
+
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,
 	LPVOID lpReserved
@@ -42,7 +46,7 @@ T convert_from_abi(com_ptr<::IInspectable> from)
 	return to;
 }
 
-DependencyObject FindDescendentByName(DependencyObject root, hstring name)
+DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 {
 	if (root == nullptr)
 	{
@@ -64,7 +68,7 @@ DependencyObject FindDescendentByName(DependencyObject root, hstring name)
 			return child;
 		}
 
-		DependencyObject result = FindDescendentByName(child, name);
+		DependencyObject result = FindDescendantByName(child, name);
 		if (result != nullptr)
 		{
 			return result;
@@ -74,9 +78,48 @@ DependencyObject FindDescendentByName(DependencyObject root, hstring name)
 	return nullptr;
 }
 
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0;
+BOOL RtlGetVersion(OSVERSIONINFOEX* os) {
+	HMODULE hMod;
+	RtlGetVersion_FUNC func;
+#ifdef UNICODE
+	OSVERSIONINFOEXW* osw = os;
+#else
+	OSVERSIONINFOEXW o;
+	OSVERSIONINFOEXW* osw = &o;
+#endif
+
+	hMod = LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+	if (hMod) {
+		func = (RtlGetVersion_FUNC)GetProcAddress(hMod, "RtlGetVersion");
+		if (func == 0) {
+			FreeLibrary(hMod);
+			return FALSE;
+		}
+		ZeroMemory(osw, sizeof(*osw));
+		osw->dwOSVersionInfoSize = sizeof(*osw);
+		func(osw);
+#ifndef UNICODE
+		os->dwBuildNumber = osw->dwBuildNumber;
+		os->dwMajorVersion = osw->dwMajorVersion;
+		os->dwMinorVersion = osw->dwMinorVersion;
+		os->dwPlatformId = osw->dwPlatformId;
+		os->dwOSVersionInfoSize = sizeof(*os);
+		DWORD sz = sizeof(os->szCSDVersion);
+		WCHAR* src = osw->szCSDVersion;
+		unsigned char* dtc = (unsigned char*)os->szCSDVersion;
+		while (*src)
+			*Dtc++ = (unsigned char)*src++;
+		*Dtc = '\ 0';
+#endif
+	}
+	else
+		return FALSE;
+	FreeLibrary(hMod);
+	return TRUE;
+}
+
 struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
-{	
+{
 	HRESULT STDMETHODCALLTYPE SetSite(IUnknown* pUnkSite) noexcept override
 	{
 		site.copy_from(pUnkSite);
@@ -86,35 +129,25 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		CoreDispatcher dispatcher = convert_from_abi<CoreDispatcher>(dispatcherPtr);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", L"Start_ShowClassicMode", RRF_RT_DWORD, NULL, &dwRes, &dwSize);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
-		
+
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, []()
 			{
 				auto content = Window::Current().Content();
-				// if (dwRes == 1)
-				// {
-					/*
-					auto canvas = content.as<Canvas>();
-					auto startSizingFrame = canvas.Children().GetAt(0).as<ContentControl>();
-					auto startSizingFramePanel = startSizingFrame.Content().as<ContentControl>();
-					auto contentPresenterFrame = startSizingFramePanel.Content().as<UserControl>();
-					auto rootGrid = contentPresenterFrame.Content().as<Grid>();
-					auto acrylicBorder = rootGrid.Children().GetAt(3).as<Border>();
-					auto acrylicBorderBg = acrylicBorder.Background().as<AcrylicBrush>();
-					/// acrylic
+				RtlGetVersion(&os);
+				// Search for AcrylicBorder name
+				auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
+				if (acrylicBorder != nullptr)
+				{
 					if (dwOpacity > 10) dwOpacity = 10;
-					acrylicBorderBg.TintOpacity(double(dwOpacity)/10);
-					/*
-					/// mica
-					/// shit implementation
-					acrylicBorder.Background(SolidColorBrush(Colors::Transparent()));
-					winrt::Microsoft::UI::Xaml::Controls::BackdropMaterial::SetApplyToRootOrPageBackground(contentPresenterFrame, true);
-					*/
-					
-					// Search for AcrylicBorder name
-					auto acrylicBorder = FindDescedentByName(content, L"AcrylicBorder").as<Border>();
-					if (acrylicBorder != nullptr)
-						acrylicBorder.Background(SolidColorBrush(Colors::Transparent()));
-				// }
+					if (dwRes == 1 || os.dwBuildNumber < 21996)
+					{
+						acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
+					}
+					else
+					{
+						acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwOpacity) / 10);
+					}
+				}
 			});
 		return S_OK;
 	}
