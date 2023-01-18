@@ -214,38 +214,34 @@ int main()
         std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
     }
     RegCloseKey(subKey);
+    /*
     if (!IsUserAnAdmin())
     {
         std::cout << "\n Run this app as Administrator again.\n";
         RegCloseKey(subKey);
         return 0;
     }
+    */
     SECURITY_ATTRIBUTES st;
     st.bInheritHandle = FALSE;
     st.lpSecurityDescriptor = sd;
     st.nLength = sizeof(SECURITY_ATTRIBUTES);
-    bool nResult = SHCreateDirectoryEx(0, L"C:\\tap", &st);
-    if (nResult == ERROR_SUCCESS)
-    {
-        std::cout << "\n- Created C:\\tap folder.";
-    }
-    if (!std::filesystem::exists("C:\\tap\\TAPdll.dll"))
-    {
-        const auto blob = get_dll_blob();
-        write_file(L"C:\\tap\\TAPdll.dll", blob.first, blob.second);
-        std::cout << "\n- Wrote C:\\tap\\TAPdll.dll";
-    }
-    nResult = FileGrantAll(L"C:\\tap");
+	// Get the path to the current executable
+	wchar_t path[MAX_PATH];
+	GetModuleFileNameW(NULL, path, MAX_PATH);
+	std::wstring pathStr = path;
+	// Get the path to the current directory
+	std::wstring dir = pathStr.substr(0, pathStr.find_last_of(L"\\"));
+	// Get the path to the DLL
+	std::wstring dllPath = dir + L"\\TAPdll.dll";
+    // Convert dllPath to WCHAR
+	const wchar_t* dllPathW = dllPath.c_str();
+    auto nResult = FileGrantAll(dllPathW);
     if (nResult != 0)
     {
-        std::cout << "\n- Changed C:\\tap permissions";
-    }
-    nResult = FileGrantAll(L"C:\\tap\\TAPdll.dll");
-    if (nResult != 0)
-    {
-        std::cout << "\n- Changed C:\\tap\\TAPdll.dll permissions";
+        std::cout << "\n- Changed TAPdll.dll permissions";
     }
     std::cout << "\n\n";
-    InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, L"C:\\tap\\TAPdll.dll", temp, L"");
+    InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
     return 0;
 }

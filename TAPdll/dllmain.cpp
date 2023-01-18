@@ -41,9 +41,42 @@ T convert_from_abi(com_ptr<::IInspectable> from)
 
 	return to;
 }
+
+DependencyObject FindDescendentByName(DependencyObject root, hstring name)
+{
+	if (root == nullptr)
+	{
+		return nullptr;
+	}
+
+	int count = VisualTreeHelper::GetChildrenCount(root);
+	for (int i = 0; i < count; i++)
+	{
+		DependencyObject child = VisualTreeHelper::GetChild(root, i);
+		if (child == nullptr)
+		{
+			continue;
+		}
+
+		hstring childName = child.GetValue(FrameworkElement::NameProperty()).as<hstring>();
+		if (childName == name)
+		{
+			return child;
+		}
+
+		DependencyObject result = FindDescendentByName(child, name);
+		if (result != nullptr)
+		{
+			return result;
+		}
+	}
+
+	return nullptr;
+}
+
 DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0;
 struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
-{
+{	
 	HRESULT STDMETHODCALLTYPE SetSite(IUnknown* pUnkSite) noexcept override
 	{
 		site.copy_from(pUnkSite);
@@ -57,8 +90,9 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, []()
 			{
 				auto content = Window::Current().Content();
-				if (dwRes == 1)
-				{
+				// if (dwRes == 1)
+				// {
+					/*
 					auto canvas = content.as<Canvas>();
 					auto startSizingFrame = canvas.Children().GetAt(0).as<ContentControl>();
 					auto startSizingFramePanel = startSizingFrame.Content().as<ContentControl>();
@@ -76,7 +110,11 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 					winrt::Microsoft::UI::Xaml::Controls::BackdropMaterial::SetApplyToRootOrPageBackground(contentPresenterFrame, true);
 					*/
 					
-				}
+					// Search for AcrylicBorder name
+					auto acrylicBorder = FindDescedentByName(content, L"AcrylicBorder").as<Border>();
+					if (acrylicBorder != nullptr)
+						acrylicBorder.Background(SolidColorBrush(Colors::Transparent()));
+				// }
 			});
 		return S_OK;
 	}
