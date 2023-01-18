@@ -139,11 +139,8 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 				if (acrylicBorder != nullptr)
 				{
 					if (dwOpacity > 10) dwOpacity = 10;
-					if (dwRes == 1 || os.dwBuildNumber < 21996)
-					{
-						acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
-					}
-					else
+					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
+					if (dwRes == 0 && os.dwBuildNumber >= 21996)
 					{
 						acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwOpacity) / 10);
 					}
