@@ -111,7 +111,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 					*/
 					
 					// Search for AcrylicBorder name
-					auto acrylicBorder = FindDescedentByName(content, L"AcrylicBorder").as<Border>();
+					auto acrylicBorder = FindDescendentByName(content, L"AcrylicBorder").as<Border>();
 					if (acrylicBorder != nullptr)
 						acrylicBorder.Background(SolidColorBrush(Colors::Transparent()));
 				// }
