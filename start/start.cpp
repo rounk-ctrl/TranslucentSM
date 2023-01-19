@@ -183,41 +183,47 @@ int main()
 	DWORD pid = 0;
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
-    if (Process32First(snapshot, &entry) == TRUE)
-    {
-        while (Process32Next(snapshot, &entry) == TRUE)
-        {
-            if (wcscmp(entry.szExeFile, ok.c_str())== 0)
-            {
-                pid = entry.th32ProcessID;
-            }
-        }
-    }
-    CloseHandle(snapshot);
-    std::cout << "\n- StartMenuExperienceHost.exe PID: " << pid;
-    static constexpr GUID temp = { 0x36162bd3, 0x3531, 0x4131, { 0x9b, 0x8b, 0x7f, 0xb1, 0xa9, 0x91, 0xef, 0x51 } };
-    typedef HRESULT(*InitializeXamlDiagnosticsExProto)(_In_ LPCWSTR endPointName, _In_ DWORD pid, _In_opt_ LPCWSTR wszDllXamlDiagnostics, _In_ LPCWSTR wszTAPDllName, _In_opt_ CLSID tapClsid, _In_ LPCWSTR wszInitializationData);
-    InitializeXamlDiagnosticsExProto InitializeXamlDiagnosticsExFn = (InitializeXamlDiagnosticsExProto)GetProcAddress(LoadLibraryW(L"Windows.UI.Xaml.dll"), "InitializeXamlDiagnosticsEx");
-    HKEY subKey = nullptr;
-    DWORD disposition;
-    DWORD dwSize = sizeof(DWORD), dwInstalled = 0;
-    RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\TranslucentSM", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subKey, &disposition);
-    if (disposition == REG_CREATED_NEW_KEY)
-    {
-        std::cout << "\n- Created HKCU\\SOFTWARE\\TranslucentSM registry key.";
-        RegistryGrantAll(subKey);
-        DWORD opacity = 3;
-        RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
-    }
-    else
-    {
-        std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
-    }
-    RegCloseKey(subKey);
-    SECURITY_ATTRIBUTES st;
-    st.bInheritHandle = FALSE;
-    st.lpSecurityDescriptor = sd;
-    st.nLength = sizeof(SECURITY_ATTRIBUTES);
+	if (Process32First(snapshot, &entry) == TRUE)
+	{
+		while (Process32Next(snapshot, &entry) == TRUE)
+		{
+			if (wcscmp(entry.szExeFile, ok.c_str()) == 0)
+			{
+				pid = entry.th32ProcessID;
+			}
+		}
+	}
+	CloseHandle(snapshot);
+	if (pid == 0)
+	{
+		std::cout << "\n- StartMenuExperienceHost.exe is not running.";
+		return 0;
+	}
+	std::cout << "\n- StartMenuExperienceHost.exe PID: " << pid;
+	static constexpr GUID temp = { 0x36162bd3, 0x3531, 0x4131, { 0x9b, 0x8b, 0x7f, 0xb1, 0xa9, 0x91, 0xef, 0x51 } };
+	typedef HRESULT(*InitializeXamlDiagnosticsExProto)(_In_ LPCWSTR endPointName, _In_ DWORD pid, _In_opt_ LPCWSTR wszDllXamlDiagnostics, _In_ LPCWSTR wszTAPDllName, _In_opt_ CLSID tapClsid, _In_ LPCWSTR wszInitializationData);
+	InitializeXamlDiagnosticsExProto InitializeXamlDiagnosticsExFn = (InitializeXamlDiagnosticsExProto)GetProcAddress(LoadLibraryW(L"Windows.UI.Xaml.dll"), "InitializeXamlDiagnosticsEx");
+	HKEY subKey = nullptr;
+	DWORD disposition;
+	DWORD dwSize = sizeof(DWORD), dwInstalled = 0;
+	RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\TranslucentSM", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subKey, &disposition);
+	if (disposition == REG_CREATED_NEW_KEY)
+	{
+		std::cout << "\n- Created HKCU\\SOFTWARE\\TranslucentSM registry key.";
+		RegistryGrantAll(subKey);
+		DWORD opacity = 3;
+		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
+		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
+	}
+	else
+	{
+		std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
+	}
+	RegCloseKey(subKey);
+	SECURITY_ATTRIBUTES st;
+	st.bInheritHandle = FALSE;
+	st.lpSecurityDescriptor = sd;
+	st.nLength = sizeof(SECURITY_ATTRIBUTES);
 	// Get the path to the current executable
 	wchar_t path[MAX_PATH];
 	GetModuleFileNameW(NULL, path, MAX_PATH);
@@ -226,15 +232,20 @@ int main()
 	std::wstring dir = pathStr.substr(0, pathStr.find_last_of(L"\\"));
 	// Get the path to the DLL
 	std::wstring dllPath = dir + L"\\TAPdll.dll";
-    // Convert dllPath to WCHAR
+	// Convert dllPath to WCHAR
 	const wchar_t* dllPathW = dllPath.c_str();
-    auto nResult = FileGrantAll(dllPathW);
-    if (nResult != 0)
-    {
-        std::cout << "\n- Changed TAPdll.dll permissions";
-    }
-    InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
+	if (!std::filesystem::exists(dllPathW))
+	{
+		std::cout << "\n- TAPdll.dll not found.";
+		return 0;
+	}
+	auto nResult = FileGrantAll(dllPathW);
+	if (nResult != 0)	
+	{
+		std::cout << "\n- Changed TAPdll.dll permissions.";
+	}
+	InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
 	std::cout << "\n- Success!"; // ig always succeeds
 	std::cout << "\n\n";
-    return 0;
+	return 0;
 }

@@ -16,7 +16,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0;
+DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0;
 typedef void (WINAPI* RtlGetVersion_FUNC) (OSVERSIONINFOEXW*);
 OSVERSIONINFOEX os;
 
@@ -129,6 +129,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		CoreDispatcher dispatcher = convert_from_abi<CoreDispatcher>(dispatcherPtr);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", L"Start_ShowClassicMode", RRF_RT_DWORD, NULL, &dwRes, &dwSize);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
+		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
 
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, []()
 			{
@@ -142,7 +143,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
 					if (dwRes == 0 && os.dwBuildNumber >= 21996)
 					{
-						acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwOpacity) / 10);
+						acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 10);
 					}
 				}
 			});
