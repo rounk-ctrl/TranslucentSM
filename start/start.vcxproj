@@ -149,14 +149,6 @@
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TAPdll\TAPdll.vcxproj">
-      <Project>{c570cd20-b534-44bd-9989-ccb64ac1102e}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\x64\Release\TAPdll.dll" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

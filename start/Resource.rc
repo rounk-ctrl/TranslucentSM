@@ -49,15 +49,6 @@ END
 //
 // 256
 //
-#if defined(_DEBUG)
-
-TAPx64                  256                     "../x64/Debug/TAPdll.dll"
-
-#else
-
-TAPx64                  256                     "../x64/Release/TAPdll.dll"
-
-#endif
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
