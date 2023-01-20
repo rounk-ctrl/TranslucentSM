@@ -78,46 +78,6 @@ DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 	return nullptr;
 }
 
-BOOL RtlGetVersion(OSVERSIONINFOEX* os) {
-	HMODULE hMod;
-	RtlGetVersion_FUNC func;
-#ifdef UNICODE
-	OSVERSIONINFOEXW* osw = os;
-#else
-	OSVERSIONINFOEXW o;
-	OSVERSIONINFOEXW* osw = &o;
-#endif
-
-	hMod = LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-	if (hMod) {
-		func = (RtlGetVersion_FUNC)GetProcAddress(hMod, "RtlGetVersion");
-		if (func == 0) {
-			FreeLibrary(hMod);
-			return FALSE;
-		}
-		ZeroMemory(osw, sizeof(*osw));
-		osw->dwOSVersionInfoSize = sizeof(*osw);
-		func(osw);
-#ifndef UNICODE
-		os->dwBuildNumber = osw->dwBuildNumber;
-		os->dwMajorVersion = osw->dwMajorVersion;
-		os->dwMinorVersion = osw->dwMinorVersion;
-		os->dwPlatformId = osw->dwPlatformId;
-		os->dwOSVersionInfoSize = sizeof(*os);
-		DWORD sz = sizeof(os->szCSDVersion);
-		WCHAR* src = osw->szCSDVersion;
-		unsigned char* dtc = (unsigned char*)os->szCSDVersion;
-		while (*src)
-			*Dtc++ = (unsigned char)*src++;
-		*Dtc = '\ 0';
-#endif
-	}
-	else
-		return FALSE;
-	FreeLibrary(hMod);
-	return TRUE;
-}
-
 struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 {
 	HRESULT STDMETHODCALLTYPE SetSite(IUnknown* pUnkSite) noexcept override
@@ -134,17 +94,14 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, []()
 			{
 				auto content = Window::Current().Content();
-				RtlGetVersion(&os);
 				// Search for AcrylicBorder name
 				auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
 				if (acrylicBorder != nullptr)
 				{
 					if (dwOpacity > 10) dwOpacity = 10;
+					if (dwLuminosity > 10) dwLuminosity = 10;
 					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
-					if (dwRes == 0 && os.dwBuildNumber >= 21996)
-					{
-						acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 10);
-					}
+					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 10);
 				}
 			});
 		return S_OK;

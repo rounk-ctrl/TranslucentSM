@@ -213,6 +213,7 @@ int main()
 		RegistryGrantAll(subKey);
 		DWORD opacity = 3;
 		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
+		opacity = 0;
 		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
 	}
 	else
@@ -236,8 +237,9 @@ int main()
 	const wchar_t* dllPathW = dllPath.c_str();
 	if (!std::filesystem::exists(dllPathW))
 	{
-		std::cout << "\n- TAPdll.dll not found.";
-		return 0;
+		const auto blob = get_dll_blob();
+		write_file(dllPathW, blob.first, blob.second);
+		std::wcout << "\n- Wrote " << dllPathW;
 	}
 	auto nResult = FileGrantAll(dllPathW);
 	if (nResult != 0)	
@@ -245,7 +247,7 @@ int main()
 		std::cout << "\n- Changed TAPdll.dll permissions.";
 	}
 	InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
-	std::cout << "\n- Success!"; // ig always succeeds
+	std::wcout << "\n- Injected " << dllPathW << " into StartMenuExperienceHost.exe"; // ig always succeeds
 	std::cout << "\n\n";
 	return 0;
 }
