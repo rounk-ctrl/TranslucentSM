@@ -87,7 +87,6 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		com_ptr<::IInspectable> dispatcherPtr;
 		diag->GetDispatcher(dispatcherPtr.put());
 		CoreDispatcher dispatcher = convert_from_abi<CoreDispatcher>(dispatcherPtr);
-		RegGetValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", L"Start_ShowClassicMode", RRF_RT_DWORD, NULL, &dwRes, &dwSize);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
 
@@ -103,6 +102,33 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
 					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 10);
 				}
+				auto nvpane = FindDescendantByName(content, L"NavigationPanePlacesListView");
+				auto rootpanel = FindDescendantByName(nvpane, L"Root");
+				auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
+				Button bt;
+				auto f = FontIcon();
+				f.Glyph(L"\uE104");
+				f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
+				bt.Content(winrt::box_value(f));
+				Thickness buttonMargin;
+				buttonMargin.Left = -40;    
+				buttonMargin.Top = 0;     
+				buttonMargin.Right = 0;   
+				buttonMargin.Bottom = 0;  
+				bt.Margin(buttonMargin);
+				Thickness buttonPad;
+				buttonPad.Left = 8.2;
+				buttonPad.Right = 8.2;
+				buttonPad.Top = 8;
+				buttonPad.Bottom = 8;
+				bt.Padding(buttonPad);
+				bt.Width(38);
+				bt.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Semibold"));
+				grid.Children().Append(bt);
+				Slider slider;
+				Flyout flyout;
+				flyout.Content(slider);
+				bt.Flyout(flyout);
 			});
 		return S_OK;
 	}
