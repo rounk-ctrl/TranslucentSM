@@ -2,14 +2,17 @@
 #include "pch.h"
 
 #include <winrt/base.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 
 using namespace winrt;
+using namespace Windows::Foundation;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
@@ -94,7 +97,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 			{
 				auto content = Window::Current().Content();
 				// Search for AcrylicBorder name
-				auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
+				static auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
 				if (acrylicBorder != nullptr)
 				{
 					if (dwOpacity > 10) dwOpacity = 10;
@@ -113,7 +116,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 				Thickness buttonMargin;
 				buttonMargin.Left = -40;    
 				buttonMargin.Top = 0;     
-				buttonMargin.Right = 0;   
+				buttonMargin.Right = 0;
 				buttonMargin.Bottom = 0;  
 				bt.Margin(buttonMargin);
 				Thickness buttonPad;
@@ -125,9 +128,33 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 				bt.Width(38);
 				bt.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Semibold"));
 				grid.Children().Append(bt);
+
+				auto stackPanel = StackPanel();
+
 				Slider slider;
+				slider.Width(100);
+				slider.Value(dwOpacity * 10);
+				stackPanel.Children().Append(slider);
+
+				Slider slider2;
+				slider2.Width(100);
+				slider2.Value(dwLuminosity * 10);
+				stackPanel.Children().Append(slider2);
+				
+				slider.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
+					auto sliderControl = sender.as<Slider>();
+					double sliderValue = sliderControl.Value();
+					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
+					});
+
+				slider2.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
+					auto sliderControl = sender.as<Slider>();
+					double sliderValue = sliderControl.Value();
+					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(sliderValue) / 100);
+					});
+
 				Flyout flyout;
-				flyout.Content(slider);
+				flyout.Content(stackPanel);
 				bt.Flyout(flyout);
 			});
 		return S_OK;
