@@ -108,6 +108,8 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 				auto nvpane = FindDescendantByName(content, L"NavigationPanePlacesListView");
 				auto rootpanel = FindDescendantByName(nvpane, L"Root");
 				auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
+				static auto srchBox = FindDescendantByName(content, L"StartMenuSearchBox").as<Control>();
+
 				Button bt;
 				auto f = FontIcon();
 				f.Glyph(L"\uE104");
@@ -131,14 +133,28 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 
 				auto stackPanel = StackPanel();
 
+				TextBlock tbx;
+				tbx.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
+				tbx.FontSize(13.0);
+				winrt::hstring hs = L"TintOpacity";
+				tbx.Text(hs);
+				stackPanel.Children().Append(tbx);
+
 				Slider slider;
-				slider.Width(100);
-				slider.Value(dwOpacity * 10);
+				slider.Width(140);
+				slider.Value(acrylicBorder.Background().as<AcrylicBrush>().TintOpacity() * 100);
 				stackPanel.Children().Append(slider);
 
+				TextBlock tbx1;
+				tbx1.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
+				tbx1.FontSize(13.0);
+				winrt::hstring hs1 = L"TintLuminosityOpacity";
+				tbx1.Text(hs1);
+				stackPanel.Children().Append(tbx1);
+
 				Slider slider2;
-				slider2.Width(100);
-				slider2.Value(dwLuminosity * 10);
+				slider2.Width(140);
+				slider2.Value(acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity().Value() * 100);
 				stackPanel.Children().Append(slider2);
 				
 				slider.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
@@ -151,6 +167,21 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 					auto sliderControl = sender.as<Slider>();
 					double sliderValue = sliderControl.Value();
 					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(sliderValue) / 100);
+					});
+
+
+				auto checkBox = CheckBox();
+				checkBox.Content(box_value(L"Hide search box"));
+				stackPanel.Children().Append(checkBox);
+
+				checkBox.Checked([](IInspectable const& sender, RoutedEventArgs const&) {
+					auto checkbox = sender.as<CheckBox>();
+					srchBox.Visibility(Visibility::Collapsed);
+					});
+
+				checkBox.Unchecked([](IInspectable const& sender, RoutedEventArgs const&) {
+					auto checkbox = sender.as<CheckBox>();
+					srchBox.Visibility(Visibility::Visible);
 					});
 
 				Flyout flyout;
