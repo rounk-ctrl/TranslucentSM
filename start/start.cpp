@@ -211,15 +211,21 @@ int main()
 	{
 		std::cout << "\n- Created HKCU\\SOFTWARE\\TranslucentSM registry key.";
 		RegistryGrantAll(subKey);
-		DWORD opacity = 3;
+		DWORD opacity = 30;
 		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
-		opacity = 0;
+		opacity = 50;
 		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
 	}
 	else
 	{
 		std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
 	}
+	DWORD ser = 0;
+	if (ERROR_FILE_NOT_FOUND == RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &ser, &dwSize))
+	{
+		RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+	}
+
 	RegCloseKey(subKey);
 	SECURITY_ATTRIBUTES st;
 	st.bInheritHandle = FALSE;

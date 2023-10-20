@@ -19,7 +19,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0;
+DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0;
 typedef void (WINAPI* RtlGetVersion_FUNC) (OSVERSIONINFOEXW*);
 OSVERSIONINFOEX os;
 
@@ -92,101 +92,115 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 		CoreDispatcher dispatcher = convert_from_abi<CoreDispatcher>(dispatcherPtr);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
 		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
+		RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
 
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, []()
 			{
 				auto content = Window::Current().Content();
 				// Search for AcrylicBorder name
 				static auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
+				static auto srchBox = FindDescendantByName(content, L"StartMenuSearchBox").as<Control>();
 				if (acrylicBorder != nullptr)
 				{
-					if (dwOpacity > 10) dwOpacity = 10;
-					if (dwLuminosity > 10) dwLuminosity = 10;
-					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 10);
-					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 10);
+					if (dwOpacity > 100) dwOpacity = 100;
+					if (dwLuminosity > 100) dwLuminosity = 100;
+					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 100);
+					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 100);
+					if (dwHide == 1 && srchBox != nullptr)
+					{
+						srchBox.Visibility(Visibility::Collapsed);
+					}
 				}
 				auto nvpane = FindDescendantByName(content, L"NavigationPanePlacesListView");
 				auto rootpanel = FindDescendantByName(nvpane, L"Root");
-				auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
-				static auto srchBox = FindDescendantByName(content, L"StartMenuSearchBox").as<Control>();
+				if (rootpanel != nullptr)
+				{ 
+					auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
+					if (grid != nullptr)
+					{
+						Button bt;
+						auto f = FontIcon();
+						f.Glyph(L"\uE104");
+						f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
+						bt.Content(winrt::box_value(f));
+						Thickness buttonMargin{-40,0,0,0};
+						bt.Margin(buttonMargin);
+						Thickness buttonPad{8.2,8,8.2,8};
+						bt.Padding(buttonPad);
+						bt.Width(38);
+						bt.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Semibold"));
+						grid.Children().Append(bt);
 
-				Button bt;
-				auto f = FontIcon();
-				f.Glyph(L"\uE104");
-				f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
-				bt.Content(winrt::box_value(f));
-				Thickness buttonMargin;
-				buttonMargin.Left = -40;    
-				buttonMargin.Top = 0;     
-				buttonMargin.Right = 0;
-				buttonMargin.Bottom = 0;  
-				bt.Margin(buttonMargin);
-				Thickness buttonPad;
-				buttonPad.Left = 8.2;
-				buttonPad.Right = 8.2;
-				buttonPad.Top = 8;
-				buttonPad.Bottom = 8;
-				bt.Padding(buttonPad);
-				bt.Width(38);
-				bt.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Semibold"));
-				grid.Children().Append(bt);
+						auto stackPanel = StackPanel();
 
-				auto stackPanel = StackPanel();
+						TextBlock tbx;
+						tbx.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
+						tbx.FontSize(13.0);
+						winrt::hstring hs = L"TintOpacity";
+						tbx.Text(hs);
+						stackPanel.Children().Append(tbx);
 
-				TextBlock tbx;
-				tbx.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
-				tbx.FontSize(13.0);
-				winrt::hstring hs = L"TintOpacity";
-				tbx.Text(hs);
-				stackPanel.Children().Append(tbx);
+						Slider slider;
+						slider.Width(140);
+						slider.Value(acrylicBorder.Background().as<AcrylicBrush>().TintOpacity() * 100);
+						stackPanel.Children().Append(slider);
 
-				Slider slider;
-				slider.Width(140);
-				slider.Value(acrylicBorder.Background().as<AcrylicBrush>().TintOpacity() * 100);
-				stackPanel.Children().Append(slider);
+						TextBlock tbx1;
+						tbx1.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
+						tbx1.FontSize(13.0);
+						winrt::hstring hs1 = L"TintLuminosityOpacity";
+						tbx1.Text(hs1);
+						stackPanel.Children().Append(tbx1);
 
-				TextBlock tbx1;
-				tbx1.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Variable"));
-				tbx1.FontSize(13.0);
-				winrt::hstring hs1 = L"TintLuminosityOpacity";
-				tbx1.Text(hs1);
-				stackPanel.Children().Append(tbx1);
+						Slider slider2;
+						slider2.Width(140);
+						slider2.Value(acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity().Value() * 100);
+						stackPanel.Children().Append(slider2);
 
-				Slider slider2;
-				slider2.Width(140);
-				slider2.Value(acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity().Value() * 100);
-				stackPanel.Children().Append(slider2);
-				
-				slider.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
-					auto sliderControl = sender.as<Slider>();
-					double sliderValue = sliderControl.Value();
-					acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
-					});
+						static HKEY subKey = nullptr;
+						DWORD dwSize = sizeof(DWORD), dwInstalled = 0;
+						RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\TranslucentSM", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subKey, NULL);
 
-				slider2.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
-					auto sliderControl = sender.as<Slider>();
-					double sliderValue = sliderControl.Value();
-					acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(sliderValue) / 100);
-					});
+						slider.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
+							auto sliderControl = sender.as<Slider>();
+							double sliderValue = sliderControl.Value();
+							DWORD val = sliderValue;
+							acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
+							RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
+							});
 
+						slider2.ValueChanged([](IInspectable const& sender, RoutedEventArgs const&) {
+							auto sliderControl = sender.as<Slider>();
+							double sliderValue = sliderControl.Value();
+							DWORD val = sliderValue;
+							acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(sliderValue) / 100);
+							RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
+							});
 
-				auto checkBox = CheckBox();
-				checkBox.Content(box_value(L"Hide search box"));
-				stackPanel.Children().Append(checkBox);
+						auto checkBox = CheckBox();
+						checkBox.Content(box_value(L"Hide search box"));
+						stackPanel.Children().Append(checkBox);
+						if (dwHide == 1)
+						{
+							checkBox.IsChecked(true);
+						}
+						checkBox.Checked([](IInspectable const& sender, RoutedEventArgs const&) {
+							DWORD ser = 1;
+							RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+							srchBox.Visibility(Visibility::Collapsed);
+							});
 
-				checkBox.Checked([](IInspectable const& sender, RoutedEventArgs const&) {
-					auto checkbox = sender.as<CheckBox>();
-					srchBox.Visibility(Visibility::Collapsed);
-					});
+						checkBox.Unchecked([](IInspectable const& sender, RoutedEventArgs const&) {
+							DWORD ser = 0;
+							RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+							srchBox.Visibility(Visibility::Visible);
+							});
 
-				checkBox.Unchecked([](IInspectable const& sender, RoutedEventArgs const&) {
-					auto checkbox = sender.as<CheckBox>();
-					srchBox.Visibility(Visibility::Visible);
-					});
-
-				Flyout flyout;
-				flyout.Content(stackPanel);
-				bt.Flyout(flyout);
+						Flyout flyout;
+						flyout.Content(stackPanel);
+						bt.Flyout(flyout);
+					}
+				}
 			});
 		return S_OK;
 	}
