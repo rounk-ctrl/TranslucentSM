@@ -20,8 +20,6 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 
 DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0;
-typedef void (WINAPI* RtlGetVersion_FUNC) (OSVERSIONINFOEXW*);
-OSVERSIONINFOEX os;
 
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,
@@ -100,6 +98,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 				// Search for AcrylicBorder name
 				static auto acrylicBorder = FindDescendantByName(content, L"AcrylicBorder").as<Border>();
 				static auto srchBox = FindDescendantByName(content, L"StartMenuSearchBox").as<Control>();
+
 				if (acrylicBorder != nullptr)
 				{
 					if (dwOpacity > 100) dwOpacity = 100;
@@ -122,13 +121,17 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 						auto f = FontIcon();
 						f.Glyph(L"\uE104");
 						f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
+						f.FontSize(15.5);
 						bt.Content(winrt::box_value(f));
 						Thickness buttonMargin{-40,0,0,0};
 						bt.Margin(buttonMargin);
-						Thickness buttonPad{8.2,8,8.2,8};
+						Thickness buttonPad{11.2,11.2,11.2,11.2};
 						bt.Padding(buttonPad);
 						bt.Width(38);
-						bt.FontFamily(Windows::UI::Xaml::Media::FontFamily(L"Segoe UI Semibold"));
+						bt.BorderThickness(Thickness{0});
+						bt.BorderBrush(SolidColorBrush(Colors::Transparent()));
+						bt.Background(SolidColorBrush(Colors::Transparent()));
+						ToolTipService::SetToolTip(bt, box_value(L"TranslucentSM settings"));
 						grid.Children().Append(bt);
 
 						auto stackPanel = StackPanel();
@@ -265,7 +268,6 @@ _Use_decl_annotations_ STDAPI DllCanUnloadNow(void)
 	}
 	else
 	{
-
 		return S_OK;
 	}
 }
