@@ -121,7 +121,7 @@ struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
 						auto f = FontIcon();
 						f.Glyph(L"\uE104");
 						f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
-						f.FontSize(15.5);
+						f.FontSize(16);
 						bt.Content(winrt::box_value(f));
 						Thickness buttonMargin{-40,0,0,0};
 						bt.Margin(buttonMargin);
