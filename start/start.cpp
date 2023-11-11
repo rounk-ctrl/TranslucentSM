@@ -174,7 +174,7 @@ DWORD write_file(std::wstring path, const void* data, size_t size)
 	return error;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
 	std::cout << "Initializing...\nอออออออออออออออ\n";
 	PROCESSENTRY32 entry;
@@ -227,20 +227,21 @@ int main()
 	}
 
 	RegCloseKey(subKey);
-	SECURITY_ATTRIBUTES st;
-	st.bInheritHandle = FALSE;
-	st.lpSecurityDescriptor = sd;
-	st.nLength = sizeof(SECURITY_ATTRIBUTES);
+
 	// Get the path to the current executable
 	wchar_t path[MAX_PATH];
 	GetModuleFileNameW(NULL, path, MAX_PATH);
 	std::wstring pathStr = path;
+
 	// Get the path to the current directory
 	std::wstring dir = pathStr.substr(0, pathStr.find_last_of(L"\\"));
+
 	// Get the path to the DLL
-	std::wstring dllPath = dir + L"\\TAPdll.dll";
+	std::wstring dllPath = dir + L"\\StartTAP.dll";
+
 	// Convert dllPath to WCHAR
 	const wchar_t* dllPathW = dllPath.c_str();
+
 	if (!std::filesystem::exists(dllPathW))
 	{
 		const auto blob = get_dll_blob();
@@ -250,7 +251,7 @@ int main()
 	auto nResult = FileGrantAll(dllPathW);
 	if (nResult != 0)	
 	{
-		std::cout << "\n- Changed TAPdll.dll permissions.";
+		std::cout << "\n- Changed StartTAP.dll permissions.";
 	}
 	InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
 	std::wcout << "\n- Injected " << dllPathW << " into StartMenuExperienceHost.exe"; // ig always succeeds

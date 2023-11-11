@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33209.295
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "start", "start\start.vcxproj", "{FC03654C-4D2A-4416-9A96-84F6301CB077}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TAPdll", "TAPdll\TAPdll.vcxproj", "{C570CD20-B534-44BD-9989-CCB64AC1102E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StartTAP", "StartTAP\StartTAP.vcxproj", "{C570CD20-B534-44BD-9989-CCB64AC1102E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
