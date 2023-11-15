@@ -10,6 +10,7 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Input.h>
 
 using namespace winrt;
 using namespace Windows::Foundation;
@@ -79,7 +80,7 @@ DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 	return nullptr;
 }
 
-struct ExplorerTAP : winrt::implements<ExplorerTAP, IObjectWithSite>
+struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 {
 	HRESULT STDMETHODCALLTYPE SetSite(IUnknown* pUnkSite) noexcept override
 	{
@@ -227,7 +228,7 @@ struct TAPFactory : winrt::implements<TAPFactory, IClassFactory>
 			return CLASS_E_NOAGGREGATION;
 		}
 
-		return winrt::make<ExplorerTAP>().as(riid, ppvObject);
+		return winrt::make<StartTAP>().as(riid, ppvObject);
 	}
 	catch (...)
 	{

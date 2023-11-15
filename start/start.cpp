@@ -2,22 +2,16 @@
 //
 
 #include <iostream>
-#include <xamlOM.h>
 #include <cstdio>
 #include <windows.h>
 #include <tlhelp32.h>
-#include <shlwapi.h>
 #include <sddl.h>
 #include <aclapi.h>
-#include <direct.h>
 #include <Shlobj.h>
-#include <string_view>
 #include <filesystem>
 #include "resource.h"
 
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 PSECURITY_DESCRIPTOR sd = nullptr, sdFile = nullptr;
-HINSTANCE get_instance() { return (HINSTANCE)&__ImageBase; }
 
 bool RegistryGrantAll(HKEY hKey)
 {
@@ -62,124 +56,25 @@ int FileGrantAll(LPCWSTR file)
 	return 1;
 }
 
-std::pair<const void*, size_t> get_resource(WORD type, WORD id)
-{
-	const auto rc = FindResource(
-		get_instance(),
-		MAKEINTRESOURCE(id),
-		MAKEINTRESOURCE(type)
-	);
-	if (!rc)
-		return { nullptr, 0 };
-	const auto rc_data = LoadResource(get_instance(), rc);
-	const auto size = SizeofResource(get_instance(), rc);
-	if (!rc_data)
-		return { nullptr, 0 };
-	const auto data = static_cast<const void*>(LockResource(rc_data));
-	return { data, size };
-}
-
-static USHORT get_native_architecture()
-{
-	// This is insanity
-
-	static const auto architecture = []
-	{
-		typedef BOOL(WINAPI* LPFN_ISWOW64PROCESS2) (HANDLE, PUSHORT, PUSHORT);
-
-		const auto kernel32 = GetModuleHandleW(L"kernel32");
-		const auto pIsWow64Process2 = kernel32 ? (LPFN_ISWOW64PROCESS2)GetProcAddress(kernel32, "IsWow64Process2") : nullptr;
-		USHORT ProcessMachine = 0;
-		USHORT NativeMachine = 0;
-
-		// Apparently IsWow64Process2 can fail somehow
-		if (pIsWow64Process2 && pIsWow64Process2(GetCurrentProcess(), &ProcessMachine, &NativeMachine))
-			return NativeMachine;
-
-		SYSTEM_INFO si;
-		// On 64 bit processors that aren't x64 or IA64, GetNativeSystemInfo behaves as GetSystemInfo
-		GetNativeSystemInfo(&si);
-		switch (si.wProcessorArchitecture)
-		{
-		case PROCESSOR_ARCHITECTURE_AMD64:
-			return (USHORT)IMAGE_FILE_MACHINE_AMD64;
-		case PROCESSOR_ARCHITECTURE_ARM:
-			return (USHORT)IMAGE_FILE_MACHINE_ARM;
-		case PROCESSOR_ARCHITECTURE_ARM64: // according to docs this could never happen
-			return (USHORT)IMAGE_FILE_MACHINE_ARM64;
-		case PROCESSOR_ARCHITECTURE_IA64:
-			return (USHORT)IMAGE_FILE_MACHINE_IA64;
-		case PROCESSOR_ARCHITECTURE_INTEL:
-			return (USHORT)IMAGE_FILE_MACHINE_I386;
-		default:
-			break;
-		}
-
-		// I wonder why does IsWow64Process exist when GetNativeSystemInfo can provide same and more, plus it cannot fail
-		// either unlike IsWow64Process which apparently can do so.
-
-		return (USHORT)IMAGE_FILE_MACHINE_UNKNOWN;
-	}();
-	return architecture;
-}
-
-static int get_needed_dll_resource_id()
-{
-	switch (get_native_architecture())
-	{
-	case IMAGE_FILE_MACHINE_AMD64:
-		return TAPx64;
-	default:
-		break;
-	}
-	return 0;
-}
-
-std::pair<const void*, size_t> get_dll_blob()
-{
-	const auto id = get_needed_dll_resource_id();
-	return id ? get_resource(256, id) : std::pair<const void*, size_t>{ nullptr, 0 };
-}
-
-DWORD write_file(std::wstring path, const void* data, size_t size)
-{
-	DWORD error = NO_ERROR;
-	const auto file = CreateFileW(
-		path.data(),
-		FILE_WRITE_DATA,
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-		nullptr,
-		CREATE_ALWAYS,
-		FILE_ATTRIBUTE_NORMAL,
-		nullptr
-	);
-	if (file != INVALID_HANDLE_VALUE)
-	{
-		DWORD written = 0;
-		const auto succeeded = WriteFile(
-			file,
-			data,
-			size,
-			&written,
-			nullptr
-		);
-		if (!succeeded || written != size)
-			error = GetLastError();
-
-		CloseHandle(file);
-	}
-	else
-		error = GetLastError();
-
-	return error;
-}
-
 int main(int argc, char* argv[])
 {
 	std::cout << "Initializing...\nอออออออออออออออ\n";
 	PROCESSENTRY32 entry;
 	entry.dwSize = sizeof(PROCESSENTRY32);
 	std::wstring ok = L"StartMenuExperienceHost.exe";
+
+	if (argc > 3)
+	{
+		std::string arg = argv[3];
+		for (auto& x : arg) {
+			x = tolower(x);
+		}
+		if (arg == "/process")
+		{
+			std::wstring ws(argv[4], argv[4] + strlen(argv[4]));
+			ok = ws;
+		}
+	}
 	DWORD pid = 0;
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
@@ -196,13 +91,15 @@ int main(int argc, char* argv[])
 	CloseHandle(snapshot);
 	if (pid == 0)
 	{
-		std::cout << "\n- StartMenuExperienceHost.exe is not running.";
+		std::wcout << "\n- " << ok.c_str() << " is not running.";
+		std::cout << "\n\n";
 		return 0;
 	}
-	std::cout << "\n- StartMenuExperienceHost.exe PID: " << pid;
-	static constexpr GUID temp = { 0x36162bd3, 0x3531, 0x4131, { 0x9b, 0x8b, 0x7f, 0xb1, 0xa9, 0x91, 0xef, 0x51 } };
+	std::wcout << "\n- " << ok.c_str() << " PID: " << pid;
+
 	typedef HRESULT(*InitializeXamlDiagnosticsExProto)(_In_ LPCWSTR endPointName, _In_ DWORD pid, _In_opt_ LPCWSTR wszDllXamlDiagnostics, _In_ LPCWSTR wszTAPDllName, _In_opt_ CLSID tapClsid, _In_ LPCWSTR wszInitializationData);
-	InitializeXamlDiagnosticsExProto InitializeXamlDiagnosticsExFn = (InitializeXamlDiagnosticsExProto)GetProcAddress(LoadLibraryW(L"Windows.UI.Xaml.dll"), "InitializeXamlDiagnosticsEx");
+	InitializeXamlDiagnosticsExProto InitializeXamlDiagnosticsExFn = (InitializeXamlDiagnosticsExProto)GetProcAddress(LoadLibraryEx(L"Windows.UI.Xaml.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32), "InitializeXamlDiagnosticsEx");
+
 	HKEY subKey = nullptr;
 	DWORD disposition;
 	DWORD dwSize = sizeof(DWORD), dwInstalled = 0;
@@ -237,24 +134,47 @@ int main(int argc, char* argv[])
 	std::wstring dir = pathStr.substr(0, pathStr.find_last_of(L"\\"));
 
 	// Get the path to the DLL
-	std::wstring dllPath = dir + L"\\StartTAP.dll";
+	std::wstring dllPath = dir + L"\\";
+	std::wstring fn;
+
+	if (argc > 1)
+	{
+		std::string arg = argv[1];
+		for (auto& x : arg) {
+			x = tolower(x);
+		}
+		if (arg == "/dllname")
+		{
+			std::wstring ws(argv[2], argv[2] + strlen(argv[2]));
+			fn = ws;
+			dllPath += ws;
+		}
+	}
+	else
+	{
+		dllPath += L"StartTAP.dll";
+		fn = L"StartTAP.dll";
+	}
 
 	// Convert dllPath to WCHAR
 	const wchar_t* dllPathW = dllPath.c_str();
 
 	if (!std::filesystem::exists(dllPathW))
 	{
-		const auto blob = get_dll_blob();
-		write_file(dllPathW, blob.first, blob.second);
-		std::wcout << "\n- Wrote " << dllPathW;
+		std::wcout << "\n- " << dllPathW << " not found." << "\n\n";
+		return 0;
 	}
 	auto nResult = FileGrantAll(dllPathW);
 	if (nResult != 0)	
 	{
-		std::cout << "\n- Changed StartTAP.dll permissions.";
+		std::cout << "\n- Changed ";
+		std::wcout << fn.c_str();
+		std::cout << " permissions.";
 	}
+
+	static constexpr GUID temp = { 0x36162bd3, 0x3531, 0x4131, { 0x9b, 0x8b, 0x7f, 0xb1, 0xa9, 0x91, 0xef, 0x51 } };
 	InitializeXamlDiagnosticsExFn(L"VisualDiagConnection1", pid, NULL, dllPathW, temp, L"");
-	std::wcout << "\n- Injected " << dllPathW << " into StartMenuExperienceHost.exe"; // ig always succeeds
+	std::wcout << "\n- Injected " << dllPathW << " into " << ok.c_str(); // ig always succeeds
 	std::cout << "\n\n";
 	return 0;
 }
