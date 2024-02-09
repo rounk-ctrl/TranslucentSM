@@ -1,16 +1,5 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
-#include "pch.h"
-
-#include <winrt/base.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.UI.Xaml.h>
-#include <winrt/Windows.UI.Xaml.Controls.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.UI.Xaml.Media.h>
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
-#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
-#include <winrt/Windows.UI.Xaml.Input.h>
+#include "framework.h"
 
 using namespace winrt;
 using namespace Windows::Foundation;
@@ -205,6 +194,37 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 						bt.Flyout(flyout);
 					}
 				}
+				//auto allapps = FindDescendantByName(content, L"AllAppsRoot").as<Grid>();
+				static auto appBorder = FindDescendantByName(content, L"AppBorder").as<Border>();
+				if (appBorder != nullptr)
+				{
+					/// aaaa need a better way
+					/*
+					DWORD  dwFilter =  REG_NOTIFY_CHANGE_LAST_SET;
+					HKEY hk;
+					RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\TranslucentSM", 0, KEY_NOTIFY, &hk);
+					while (1)
+					{
+						HANDLE hevent = CreateEvent(NULL, FALSE, TRUE, NULL);
+						if (RegNotifyChangeKeyValue(hk, TRUE, dwFilter, hevent, INFINITE) != ERROR_SUCCESS)
+						{
+							return S_OK;
+						}
+						DWORD dwret = WaitForSingleObject(hevent, 2000);
+
+						DWORD val1, val2;
+						RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &val1);
+						RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &val2);
+
+						if (val1 != NULL && val2 != NULL)
+						{
+						*/
+							appBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 100);
+							appBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 100);
+						//}
+					//}
+				}
+
 			});
 		return S_OK;
 	}
@@ -244,13 +264,22 @@ _Use_decl_annotations_ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LP
 {
 	*ppv = nullptr;
 
-	// TODO: move this somewhere common
+	// TapFactory
 	// {36162BD3-3531-4131-9B8B-7FB1A991EF51}
-	static constexpr GUID temp =
+	static constexpr GUID tapFactory =
 	{ 0x36162bd3, 0x3531, 0x4131, { 0x9b, 0x8b, 0x7f, 0xb1, 0xa9, 0x91, 0xef, 0x51 } };
-	if (rclsid == temp)
+
+	// {F3454DD1-B68F-4196-8571-2260F107A47B}
+	static const GUID shellExt =
+	{ 0xf3454dd1, 0xb68f, 0x4196, { 0x85, 0x71, 0x22, 0x60, 0xf1, 0x7, 0xa4, 0x7b } };
+
+	if (rclsid == tapFactory)
 	{
 		return winrt::make<TAPFactory>().as(riid, ppv);
+	}
+	else if (rclsid == shellExt)
+	{
+
 	}
 	else
 	{
