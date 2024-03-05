@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	auto nResult = FileGrantAll(dllPathW);
-	if (nResult != 0)	
+	if (nResult != 0)
 	{
 		std::cout << "\n- Changed ";
 		std::wcout << fn.c_str();

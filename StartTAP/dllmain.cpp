@@ -106,8 +106,6 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 
 				Button bt;
 				auto f = FontIcon();
-				f.Glyph(L"\uE104");
-				f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
 				f.FontSize(16);
 				bt.BorderThickness(Thickness{ 0 });
 				bt.Background(SolidColorBrush(Colors::Transparent()));
@@ -190,6 +188,9 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					{
 						ToolTipService::SetToolTip(bt, box_value(L"TranslucentSM settings"));
 
+						f.Glyph(L"\uE104");
+						f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
+
 						bt.Content(winrt::box_value(f));
 						bt.Margin({ -40,0,0,0 });
 						bt.Padding({ 11.2,11.2,11.2,11.2 });
@@ -208,6 +209,9 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					auto nvGrid = nvds.as<Grid>();
 
 					// w10 start menu
+					f.Glyph(L"\uE70F");
+					f.FontFamily(Media::FontFamily(L"Segoe MDL2 Assets"));
+
 					RevealBorderBrush rv;
 					rv.TargetTheme(ApplicationTheme::Dark);
 
@@ -236,6 +240,7 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					textBlock.Text(L"TranslucentSM settings");
 					textBlock.Margin({ 5,13,0,0 });
 					textBlock.HorizontalAlignment(HorizontalAlignment::Left);
+					textBlock.FontSize(15);
 
 					auto panel = StackPanel();
 					panel.Margin({ -4,-4,0,0 });
