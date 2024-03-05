@@ -15,4 +15,4 @@ The main acrylic brush.
 # Screenshots
 ![image](https://github.com/rounk-ctrl/TranslucentSM/assets/70931017/4a569f8c-f66a-45d3-9841-07d4a39a5063)
 
-![image](https://github.com/rounk-ctrl/TranslucentSM/assets/70931017/5c81d8d3-880a-48bf-a863-4fb3ccf96b49)
+![image](https://github.com/rounk-ctrl/TranslucentSM/assets/70931017/2987e096-7334-4172-a25b-0ddf9ee2665f)
