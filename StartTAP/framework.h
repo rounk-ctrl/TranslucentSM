@@ -1,7 +1,7 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <combaseapi.h>
 #include <unknwn.h>
@@ -11,9 +11,8 @@
 #include <atomic>
 
 
-#define WINRT_LEAN_AND_MEAN
-
 // winrt header files
+#define WINRT_LEAN_AND_MEAN
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.Core.h>
