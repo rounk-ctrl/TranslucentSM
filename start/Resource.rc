@@ -44,14 +44,15 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,4,0,0
- PRODUCTVERSION 0,4,0,0
+ FILEVERSION 0,5,0,0
+ PRODUCTVERSION 0,5,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x25L
@@ -67,13 +68,13 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Rounak"
-            VALUE "FileDescription", "TranslucentSM"
-            VALUE "FileVersion", "0.4.0.0"
+            VALUE "FileDescription", "TranslucentSM Loader"
+            VALUE "FileVersion", "0.5.0.0"
             VALUE "InternalName", "start.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2023 Rounak"
+            VALUE "LegalCopyright", "Copyright (C) 2024 Rounak"
             VALUE "OriginalFilename", "start.exe"
             VALUE "ProductName", "TranslucentSM"
-            VALUE "ProductVersion", "0.4.0.0"
+            VALUE "ProductVersion", "0.5.0.0"
         END
     END
     BLOCK "VarFileInfo"
