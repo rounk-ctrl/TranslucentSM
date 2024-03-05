@@ -211,8 +211,10 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					RevealBorderBrush rv;
 					rv.TargetTheme(ApplicationTheme::Dark);
 
-					RevealBackgroundBrush rvb;
+					RevealBorderBrush rvb;
 					rvb.TargetTheme(ApplicationTheme::Dark);
+					rvb.Color(ColorHelper::FromArgb(128, 255, 255, 255));
+					rvb.Opacity(0.4);
 					
 					// doesnt seem to work on windows 11
 					bt.Resources().Insert(winrt::box_value(L"ButtonBackgroundPointerOver"), rvb);
@@ -224,7 +226,7 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					auto mainpanel = StackPanel();
 					mainpanel.Margin({ 0,-94,0,0 });
 					mainpanel.Height(45);
-					mainpanel.BorderThickness({ 2,2,2,2 });
+					mainpanel.BorderThickness({ 1,1,1,1 });
 					mainpanel.BorderBrush(rv);
 					Grid::SetRow(mainpanel, 3);
 					Canvas::SetZIndex(mainpanel, 10);
