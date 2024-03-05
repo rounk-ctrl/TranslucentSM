@@ -110,7 +110,7 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 				f.FontFamily(Media::FontFamily(L"Segoe Fluent Icons"));
 				f.FontSize(16);
 				bt.BorderThickness(Thickness{ 0 });
-				ToolTipService::SetToolTip(bt, box_value(L"TranslucentSM settings"));
+				bt.Background(SolidColorBrush(Colors::Transparent()));
 				auto stackPanel = StackPanel();
 
 				TextBlock tbx;
@@ -188,16 +188,16 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
 					if (grid != nullptr)
 					{
-						
+						ToolTipService::SetToolTip(bt, box_value(L"TranslucentSM settings"));
+
 						bt.Content(winrt::box_value(f));
 						bt.Margin({ -40,0,0,0 });
 						bt.Padding({ 11.2,11.2,11.2,11.2 });
 						bt.Width(38);
 						bt.BorderBrush(SolidColorBrush(Colors::Transparent()));
-						bt.Background(SolidColorBrush(Colors::Transparent()));
 						grid.Children().Append(bt);
 
-						
+
 						Flyout flyout;
 						flyout.Content(stackPanel);
 						bt.Flyout(flyout);
@@ -210,7 +210,14 @@ struct StartTAP : winrt::implements<StartTAP, IObjectWithSite>
 					// w10 start menu
 					RevealBorderBrush rv;
 					rv.TargetTheme(ApplicationTheme::Dark);
+
+					RevealBackgroundBrush rvb;
+					rvb.TargetTheme(ApplicationTheme::Dark);
 					
+					// doesnt seem to work on windows 11
+					bt.Resources().Insert(winrt::box_value(L"ButtonBackgroundPointerOver"), rvb);
+					bt.Resources().Insert(winrt::box_value(L"ButtonBackgroundPressed"), rvb);
+
 					f.HorizontalAlignment(HorizontalAlignment::Left);
 					f.Margin({ 11.2,11.2,11.2,11.2 });
 
