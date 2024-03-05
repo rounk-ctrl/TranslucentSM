@@ -13,4 +13,6 @@ Controls the luminosity brush (some secondary layer ig).
 The main acrylic brush.
 
 # Screenshots
-![HYYL5145](https://user-images.githubusercontent.com/70931017/235969892-d120bdc4-c9aa-431b-afcd-1aeb016babee.PNG)
+![image](https://github.com/rounk-ctrl/TranslucentSM/assets/70931017/4a569f8c-f66a-45d3-9841-07d4a39a5063)
+
+![image](https://github.com/rounk-ctrl/TranslucentSM/assets/70931017/5c81d8d3-880a-48bf-a863-4fb3ccf96b49)
