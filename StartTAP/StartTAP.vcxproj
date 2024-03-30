@@ -182,9 +182,11 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="VisualTreeWatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="VisualTreeWatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
