@@ -3,12 +3,6 @@
 #include "VisualTreeWatcher.h"
 
 using namespace winrt;
-using namespace Windows::Foundation;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Media;
 
 template <typename T>
 T convert_from_abi(com_ptr<::IInspectable> from)

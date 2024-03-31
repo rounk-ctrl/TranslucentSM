@@ -79,8 +79,8 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			if (dwOpacity > 100) dwOpacity = 100;
 			if (dwLuminosity > 100) dwLuminosity = 100;
 			Border acrylicBorder = FromHandle<Border>(element.Handle);
-			acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(1) / 100);
-			acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(1) / 100);
+			acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(dwOpacity) / 100);
+			acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 100);
 
 		}
 		else if (type == L"StartDocked.SearchBoxToggleButton")
@@ -90,7 +90,7 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			if (dwHide == 1) srch.Visibility(Visibility::Collapsed);
 
 		}
-		else if (name == L"RootContent")
+		else if (name == L"RootGrid")
 		{
 			Grid rootContent = FromHandle<Grid>(element.Handle);
 			AddSettingsPanel(rootContent);
