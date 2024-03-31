@@ -51,6 +51,7 @@ DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 	return nullptr;
 }
 #pragma endregion
+
 HRESULT AddSettingsPanel(Grid rootGrid);
 DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0;
 
@@ -83,6 +84,12 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(dwLuminosity) / 100);
 
 		}
+		else if (name == L"BackgroundElement" && type == L"Windows.UI.Xaml.Controls.Border")
+		{
+			// w10 hamburger menu fix
+			auto backElement = FromHandle<Border>(element.Handle);
+			backElement.Background().as<AcrylicBrush>().TintOpacity(0);
+		}
 		else if (type == L"StartDocked.SearchBoxToggleButton")
 		{
 			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
@@ -94,6 +101,17 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		{
 			Grid rootContent = FromHandle<Grid>(element.Handle);
 			AddSettingsPanel(rootContent);
+		}
+		else if (name == L"AllAppsRoot")
+		{
+			/*
+			Grid allAppsRoot = FromHandle<Grid>(element.Handle);
+			Windows::UI::Xaml::Media::Media3D::CompositeTransform3D k;
+			k.TranslateX(-676);
+			allAppsRoot.Transform3D(k);
+			allAppsRoot.Width(400);
+			allAppsRoot.Visibility(Visibility::Visible);
+			*/
 		}
 	}
 	return S_OK;
