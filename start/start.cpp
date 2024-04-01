@@ -56,6 +56,16 @@ int FileGrantAll(LPCWSTR file)
 	return 1;
 }
 
+int CreateDwords(HKEY subKey, LPCWSTR value, DWORD defVal)
+{
+	DWORD dwSize = sizeof(DWORD);
+	if (ERROR_FILE_NOT_FOUND == RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", value, RRF_RT_DWORD, NULL, NULL, &dwSize))
+	{
+		return RegSetValueEx(subKey, value, 0, REG_DWORD, (const BYTE*)&defVal, sizeof(defVal));
+	}
+	return -1;
+}
+
 int main(int argc, char* argv[])
 {
 	std::cout << "Initializing...\nอออออออออออออออ\n";
@@ -108,20 +118,17 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "\n- Created HKCU\\SOFTWARE\\TranslucentSM registry key.";
 		RegistryGrantAll(subKey);
-		DWORD opacity = 30;
-		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
-		opacity = 50;
-		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&opacity, sizeof(opacity));
 	}
 	else
 	{
 		std::cout << "\n- Opened HKCU\\SOFTWARE\\TranslucentSM registry key.";
 	}
-	DWORD ser = 0;
-	if (ERROR_FILE_NOT_FOUND == RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &ser, &dwSize))
-	{
-		RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
-	}
+	
+	// do for each key
+	CreateDwords(subKey, L"HideSearch", 0);
+	CreateDwords(subKey, L"HideBorder", 0);
+	CreateDwords(subKey, L"TintOpacity", 30);
+	CreateDwords(subKey, L"TintLuminosityOpacity", 30);
 
 	RegCloseKey(subKey);
 

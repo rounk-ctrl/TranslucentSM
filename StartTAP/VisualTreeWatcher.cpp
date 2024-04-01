@@ -53,7 +53,7 @@ DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 #pragma endregion
 
 HRESULT AddSettingsPanel(Grid rootGrid);
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0;
+DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0;
 
 VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) :
 	m_XamlDiagnostics(site.as<IXamlDiagnostics>())
@@ -102,6 +102,12 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			Grid rootContent = FromHandle<Grid>(element.Handle);
 			AddSettingsPanel(rootContent);
 		}
+		else if (name == L"AcrylicOverlay")
+		{
+			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
+			auto acrylicOverlay = FromHandle<Border>(element.Handle);
+			if (dwBorder == 1) acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
+		}
 		else if (name == L"AllAppsRoot")
 		{
 			/*
@@ -122,6 +128,8 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
+	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
+
 
 	static Border acrylicBorder = FindDescendantByName(rootGrid, L"AcrylicBorder").as<Border>();
 
@@ -198,6 +206,30 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			srchBox.Visibility(Visibility::Visible);
 			});
 	}
+	static auto acrylicOverlay = FindDescendantByName(rootGrid, L"AcrylicOverlay").as<Border>();
+	if (acrylicOverlay != nullptr)
+	{
+		auto checkBox = CheckBox();
+		checkBox.Content(box_value(L"Hide white border"));
+		stackPanel.Children().Append(checkBox);
+		if (dwBorder == 1)
+		{
+			checkBox.IsChecked(true);
+		}
+		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
+			DWORD ser = 1;
+			RegSetValueEx(subKey, TEXT("HideBorder"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
+			});
+
+		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
+			DWORD ser = 0;
+			RegSetValueEx(subKey, TEXT("HideBorder"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			acrylicOverlay.Background().as<SolidColorBrush>().Opacity(1);
+			});
+	}
+
+
 	auto nvds = FindDescendantByName(rootGrid, L"RootPanel");
 	auto nvpane = FindDescendantByName(rootGrid, L"NavigationPanePlacesListView");
 	auto rootpanel = FindDescendantByName(nvpane, L"Root");
