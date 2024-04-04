@@ -205,6 +205,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
 	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
+	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
 
 
 	static Border acrylicBorder = FindDescendantByName(rootGrid, L"AcrylicBorder").as<Border>();
