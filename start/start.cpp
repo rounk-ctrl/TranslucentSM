@@ -127,6 +127,7 @@ int main(int argc, char* argv[])
 	// do for each key
 	CreateDwords(subKey, L"HideSearch", 0);
 	CreateDwords(subKey, L"HideBorder", 0);
+	CreateDwords(subKey, L"HideRecommended", 0);
 	CreateDwords(subKey, L"TintOpacity", 30);
 	CreateDwords(subKey, L"TintLuminosityOpacity", 30);
 

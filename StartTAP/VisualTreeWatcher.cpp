@@ -53,7 +53,9 @@ DependencyObject FindDescendantByName(DependencyObject root, hstring name)
 #pragma endregion
 
 HRESULT AddSettingsPanel(Grid rootGrid);
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0;
+DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
+
+int64_t token = NULL;
 
 VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) :
 	m_XamlDiagnostics(site.as<IXamlDiagnostics>())
@@ -107,6 +109,38 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
 			auto acrylicOverlay = FromHandle<Border>(element.Handle);
 			if (dwBorder == 1) acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
+		}
+		else if (name == L"TopLevelSuggestionsListHeader" || name == L"SuggestionsParentContainer" || name == L"ShowMoreSuggestions")
+		{
+			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
+			auto elmnt = FromHandle<FrameworkElement>(element.Handle);
+			if (dwRec == 1) elmnt.Visibility(Visibility::Collapsed);
+		}
+		else if (name == L"StartMenuPinnedList")
+		{
+			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
+			if (dwRec == 0) return S_OK;
+
+
+			auto topLevelRoot = FromHandle<FrameworkElement>(relation.Parent);
+			static auto suggHeader = FindDescendantByName(topLevelRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
+			static auto suggContainer = FindDescendantByName(topLevelRoot, L"SuggestionsParentContainer").as<FrameworkElement>();
+			static auto suggBtn = FindDescendantByName(topLevelRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
+
+			auto pinList = FromHandle<FrameworkElement>(element.Handle);
+			static auto x = pinList.Height();
+			DependencyProperty heightProp = FrameworkElement::HeightProperty();
+			if (token == NULL)
+			{
+				token = pinList.RegisterPropertyChangedCallback(heightProp,
+					[](DependencyObject sender, DependencyProperty property)
+					{
+						auto element = sender.try_as<FrameworkElement>();
+						element.Height(x + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight());
+
+					});
+			}
+			pinList.Height(pinList.Height() + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight());
 		}
 		//ChangeLayout(name, type, element);
 	}
@@ -217,7 +251,6 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
 		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
 		});
-
 	slider2.ValueChanged([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
 		auto sliderControl = sender.as<Slider>();
 		double sliderValue = sliderControl.Value();
@@ -226,6 +259,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
 		});
 
+	
 	static auto srchBox = FindDescendantByName(rootGrid, L"StartMenuSearchBox").as<Control>();
 	if (srchBox != nullptr)
 	{
@@ -248,6 +282,8 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			srchBox.Visibility(Visibility::Visible);
 			});
 	}
+
+	
 	static auto acrylicOverlay = FindDescendantByName(rootGrid, L"AcrylicOverlay").as<Border>();
 	if (acrylicOverlay != nullptr)
 	{
@@ -271,10 +307,67 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			});
 	}
 
+	static auto topRoot = FindDescendantByName(rootGrid, L"TopLevelRoot").as<Grid>();
+	if (topRoot != nullptr)
+	{
+		auto checkBox = CheckBox();
+		checkBox.Content(box_value(L"Hide recommended"));
+		stackPanel.Children().Append(checkBox);
+		if (dwRec == 1)
+		{
+			checkBox.IsChecked(true);
+		}
+
+		static auto suggHeader = FindDescendantByName(topRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
+		static auto suggContainer = FindDescendantByName(topRoot, L"SuggestionsParentContainer").as<FrameworkElement>();
+		static auto suggBtn = FindDescendantByName(topRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
+		
+		static auto pinList = FindDescendantByName(topRoot, L"StartMenuPinnedList").as<FrameworkElement>();
+		static auto x = pinList.Height();
+
+		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)
+			{
+				DWORD ser = 1;
+				RegSetValueEx(subKey, TEXT("HideRecommended"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+				DependencyProperty heightProp = FrameworkElement::HeightProperty();
+				if (token == NULL)
+				{
+					token = pinList.RegisterPropertyChangedCallback(heightProp,
+						[](DependencyObject sender, DependencyProperty property)
+						{
+							auto element = sender.try_as<FrameworkElement>();
+							element.Height(x + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight());
+						});
+				}
+				pinList.Height(pinList.Height() + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight());
+				suggHeader.Visibility(Visibility::Collapsed);
+				suggContainer.Visibility(Visibility::Collapsed);
+				suggBtn.Visibility(Visibility::Collapsed);
+			});
+
+		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)
+			{
+				DWORD ser = 0;
+				RegSetValueEx(subKey, TEXT("HideRecommended"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+				suggHeader.Visibility(Visibility::Visible);
+				suggContainer.Visibility(Visibility::Visible);
+				suggBtn.Visibility(Visibility::Visible);
+
+				DependencyProperty heightProp = FrameworkElement::HeightProperty();
+				if (token != NULL)
+				{
+					pinList.UnregisterPropertyChangedCallback(heightProp, token);
+					token = NULL;
+				}
+				pinList.Height(pinList.Height() - suggHeader.ActualHeight() - suggContainer.ActualHeight() - suggBtn.ActualHeight());
+			});
+	}
+
 
 	auto nvds = FindDescendantByName(rootGrid, L"RootPanel");
 	auto nvpane = FindDescendantByName(rootGrid, L"NavigationPanePlacesListView");
 	auto rootpanel = FindDescendantByName(nvpane, L"Root");
+	// windows 11
 	if (rootpanel != nullptr)
 	{
 		auto grid = VisualTreeHelper::GetChild(rootpanel, 0).as<Grid>();
@@ -298,6 +391,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			bt.Flyout(flyout);
 		}
 	}
+	// windows 10
 	else if (nvds != nullptr)
 	{
 		auto nvGrid = nvds.as<Grid>();
@@ -359,7 +453,4 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 
 		nvGrid.Children().InsertAt(0, mainpanel);
 	}
-
-
-
 }
