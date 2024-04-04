@@ -10,9 +10,7 @@ public:
 
 	VisualTreeWatcher(VisualTreeWatcher&&) = delete;
 	VisualTreeWatcher& operator=(VisualTreeWatcher&&) = delete;
-private:
-	HRESULT STDMETHODCALLTYPE OnVisualTreeChange(ParentChildRelation relation, VisualElement element, VisualMutationType mutationType) override;
-	HRESULT STDMETHODCALLTYPE OnElementStateChanged(InstanceHandle element, VisualElementState elementState, LPCWSTR context) noexcept override;
+
 	template<typename T>
 	T FromHandle(InstanceHandle handle)
 	{
@@ -21,6 +19,12 @@ private:
 
 		return obj.as<T>();
 	}
+private:
+	HRESULT STDMETHODCALLTYPE OnVisualTreeChange(ParentChildRelation relation, VisualElement element, VisualMutationType mutationType) override;
+	HRESULT STDMETHODCALLTYPE OnElementStateChanged(InstanceHandle element, VisualElementState elementState, LPCWSTR context) noexcept override;
+
+	// defined
+	HRESULT ChangeLayout(std::wstring_view name, std::wstring_view type, VisualElement element);
 
 	winrt::com_ptr<IXamlDiagnostics> m_XamlDiagnostics;
 };

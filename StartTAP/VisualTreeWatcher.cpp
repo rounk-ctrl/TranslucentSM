@@ -108,19 +108,61 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			auto acrylicOverlay = FromHandle<Border>(element.Handle);
 			if (dwBorder == 1) acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
 		}
-		else if (name == L"AllAppsRoot")
-		{
-			/*
-			Grid allAppsRoot = FromHandle<Grid>(element.Handle);
-			Windows::UI::Xaml::Media::Media3D::CompositeTransform3D k;
-			k.TranslateX(-676);
-			allAppsRoot.Transform3D(k);
-			allAppsRoot.Width(400);
-			allAppsRoot.Visibility(Visibility::Visible);
-			*/
-		}
+		//ChangeLayout(name, type, element);
 	}
 	return S_OK;
+}
+
+// skull
+HRESULT VisualTreeWatcher::ChangeLayout(std::wstring_view name, std::wstring_view type, VisualElement element)
+{
+	if (name == L"AllAppsRoot")
+	{
+		Grid allAppsRoot = FromHandle<Grid>(element.Handle);
+		Windows::UI::Xaml::Media::Media3D::CompositeTransform3D k;
+		k.TranslateX(-950);
+		allAppsRoot.Transform3D(k);
+		allAppsRoot.Width(350);
+		DependencyProperty visibilityProperty = UIElement::VisibilityProperty();
+		allAppsRoot.RegisterPropertyChangedCallback(visibilityProperty,
+			[](DependencyObject sender, DependencyProperty property)
+			{
+				auto element = sender.try_as<FrameworkElement>();
+				element.Visibility(Visibility::Visible);
+			});
+		allAppsRoot.Visibility(Visibility::Visible);
+
+		auto allAppsPanel = FindDescendantByName(allAppsRoot, L"AllAppsPanel");
+		auto sZoom = VisualTreeHelper::GetChild(allAppsPanel, 0).as<SemanticZoom>();
+		sZoom.Margin({ -32,0,0,0 });
+		}
+	else if (name == L"AllAppsPaneHeader")
+	{
+		Grid allAppsRoot = FromHandle<Grid>(element.Handle);
+		allAppsRoot.Margin({ 83,0,64,0 });
+		}
+	else if (name == L"AppsList")
+	{
+		auto appList = FromHandle<Control>(element.Handle);
+		appList.Padding({ 52,3,-32,32 });
+		}
+	else if (type == L"StartDocked.StartSizingFrame")
+	{
+		auto startFrame = FromHandle<Control>(element.Handle);
+		startFrame.MaxWidth(900);
+		startFrame.Width(900);
+		}
+	else if (name == L"TopLevelRoot")
+	{
+		auto topRoot = FromHandle<Grid>(element.Handle);
+		topRoot.Width(630);
+		topRoot.HorizontalAlignment(HorizontalAlignment::Right);
+		}
+	else if (name == L"ShowAllAppsButton" || name == L"CloseAllAppsButton")
+	{
+		auto btn = FromHandle<FrameworkElement>(element.Handle);
+		btn.Visibility(Visibility::Collapsed);
+		}
 }
 
 HRESULT AddSettingsPanel(Grid rootGrid)
