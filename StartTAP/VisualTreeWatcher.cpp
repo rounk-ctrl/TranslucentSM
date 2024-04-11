@@ -57,11 +57,28 @@ DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide
 
 int64_t token = NULL;
 
-VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) :
+
+VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) 
+	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}), 
 	m_XamlDiagnostics(site.as<IXamlDiagnostics>())
 {
-	winrt::check_hresult(m_XamlDiagnostics.as<IVisualTreeService3>()->AdviseVisualTreeChange(this));
+	this->AddRef();
+
+	HANDLE thread = CreateThread(
+		nullptr, 0,
+		[](LPVOID lpParam) -> DWORD {
+			auto watcher = reinterpret_cast<VisualTreeWatcher*>(lpParam);
+			watcher->AdviseVisualTreeChange();
+			return 0;
+		},
+		this, 0, nullptr);
 }
+
+void VisualTreeWatcher::AdviseVisualTreeChange() {
+	const auto treeService = m_XamlDiagnostics.as<IVisualTreeService3>();
+	winrt::check_hresult(treeService->AdviseVisualTreeChange(this));
+}
+
 HRESULT VisualTreeWatcher::OnElementStateChanged(InstanceHandle, VisualElementState, LPCWSTR) noexcept
 {
 	return S_OK;
@@ -261,9 +278,11 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		});
 
 	
-	static auto srchBox = FindDescendantByName(rootGrid, L"StartMenuSearchBox").as<Control>();
-	if (srchBox != nullptr)
+	auto srchBoxElm = FindDescendantByName(rootGrid, L"StartMenuSearchBox");
+	if (srchBoxElm != nullptr)
 	{
+		static auto srchBox = srchBoxElm.as<FrameworkElement>();
+
 		auto checkBox = CheckBox();
 		checkBox.Content(box_value(L"Hide search box"));
 		stackPanel.Children().Append(checkBox);
@@ -285,9 +304,11 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 	}
 
 	
-	static auto acrylicOverlay = FindDescendantByName(rootGrid, L"AcrylicOverlay").as<Border>();
-	if (acrylicOverlay != nullptr)
+	auto acrylicOverlayElm = FindDescendantByName(rootGrid, L"AcrylicOverlay");
+	if (acrylicOverlayElm != nullptr)
 	{
+		static auto acrylicOverlay = acrylicOverlayElm.as<Border>();
+
 		auto checkBox = CheckBox();
 		checkBox.Content(box_value(L"Hide white border"));
 		stackPanel.Children().Append(checkBox);
@@ -308,9 +329,11 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			});
 	}
 
-	static auto topRoot = FindDescendantByName(rootGrid, L"TopLevelRoot").as<Grid>();
-	if (topRoot != nullptr)
+	auto topRootElm = FindDescendantByName(rootGrid, L"TopLevelRoot");
+	if (topRootElm != nullptr)
 	{
+		auto topRoot = topRootElm.as<Grid>();
+
 		auto checkBox = CheckBox();
 		checkBox.Content(box_value(L"Hide recommended"));
 		stackPanel.Children().Append(checkBox);
