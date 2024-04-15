@@ -1,4 +1,6 @@
 #include "VisualTreeWatcher.h"
+#include "Helpers.h"
+
 using namespace winrt;
 using namespace Windows::Foundation;
 using namespace winrt::Windows::UI::Core;
@@ -7,56 +9,11 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 
-#pragma region Helpers
-template <typename T>
-T convert_from_abi(com_ptr<::IInspectable> from)
-{
-	T to{ nullptr }; // `T` is a projected type.
-
-	winrt::check_hresult(from->QueryInterface(winrt::guid_of<T>(),
-		winrt::put_abi(to)));
-
-	return to;
-}
-
-DependencyObject FindDescendantByName(DependencyObject root, hstring name)
-{
-	if (root == nullptr)
-	{
-		return nullptr;
-	}
-
-	int count = VisualTreeHelper::GetChildrenCount(root);
-	for (int i = 0; i < count; i++)
-	{
-		DependencyObject child = VisualTreeHelper::GetChild(root, i);
-		if (child == nullptr)
-		{
-			continue;
-		}
-
-		hstring childName = child.GetValue(FrameworkElement::NameProperty()).as<hstring>();
-		if (childName == name)
-		{
-			return child;
-		}
-
-		DependencyObject result = FindDescendantByName(child, name);
-		if (result != nullptr)
-		{
-			return result;
-		}
-	}
-
-	return nullptr;
-}
-#pragma endregion
-
 HRESULT AddSettingsPanel(Grid rootGrid);
-DWORD dwRes = 0, dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
+DWORD dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
 
 int64_t token = NULL;
-
+static double pad = 0;
 
 VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) 
 	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}), 
@@ -91,13 +48,12 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 {
 	if (mutationType == Add)
 	{
-		static auto pad = 0;
 		const std::wstring_view type{ element.Type, SysStringLen(element.Type) };
 		const std::wstring_view name{ element.Name, SysStringLen(element.Name) };
 		if (name == L"AcrylicBorder")
 		{
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
+			dwOpacity = GetVal(L"TintOpacity");
+			dwLuminosity = GetVal(L"TintLuminosityOpacity");
 
 			// apply the things
 			if (dwOpacity > 100) dwOpacity = 100;
@@ -115,13 +71,13 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		}
 		else if (type == L"StartDocked.SearchBoxToggleButton")
 		{
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
+			dwHide = GetVal(L"HideSearch");
 			Control srch = FromHandle<Control>(element.Handle);
 			if (dwHide == 1) srch.Visibility(Visibility::Collapsed);
 
 			// recommended fix
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
-			if (dwHide == 1) pad = srch.ActualHeight() + srch.Padding().Bottom + srch.Padding().Top;
+			dwRec = GetVal(L"HideRecommended");
+			if (dwRec == 1) pad = srch.ActualHeight() + srch.Padding().Bottom + srch.Padding().Top;
 
 		}
 		else if (name == L"RootGrid")
@@ -131,41 +87,39 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		}
 		else if (name == L"AcrylicOverlay")
 		{
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
+			dwBorder = GetVal(L"HideBorder");
 			auto acrylicOverlay = FromHandle<Border>(element.Handle);
 			if (dwBorder == 1) acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
 		}
 		else if (name == L"TopLevelSuggestionsListHeader" || name == L"SuggestionsParentContainer" || name == L"ShowMoreSuggestions")
 		{
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
+			dwRec = GetVal(L"HideRecommended");
 			auto elmnt = FromHandle<FrameworkElement>(element.Handle);
 			if (dwRec == 1) elmnt.Visibility(Visibility::Collapsed);
 		}
 		else if (name == L"StartMenuPinnedList")
 		{
-			RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
+			dwRec = GetVal(L"HideRecommended");
 			if (dwRec == 1)
 			{
-
 				auto topLevelRoot = FromHandle<FrameworkElement>(relation.Parent);
 				static auto suggHeader = FindDescendantByName(topLevelRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
 				static auto suggContainer = FindDescendantByName(topLevelRoot, L"SuggestionsParentContainer").as<FrameworkElement>();
 				static auto suggBtn = FindDescendantByName(topLevelRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
-
 				auto pinList = FromHandle<FrameworkElement>(element.Handle);
-				static auto x = pinList.Height();
-				DependencyProperty heightProp = FrameworkElement::HeightProperty();
+
+				static double height = pinList.Height() + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad;
 				if (token == NULL)
 				{
-					token = pinList.RegisterPropertyChangedCallback(heightProp,
+					token = pinList.RegisterPropertyChangedCallback(FrameworkElement::HeightProperty(),
 						[](DependencyObject sender, DependencyProperty property)
 						{
 							auto element = sender.try_as<FrameworkElement>();
-							element.Height(x + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad);
-
+							element.Height(height);
 						});
 				}
-				pinList.Height(pinList.Height() + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad);
+
+				pinList.Height(height);
 				suggHeader.Visibility(Visibility::Collapsed);
 				suggContainer.Visibility(Visibility::Collapsed);
 				suggBtn.Visibility(Visibility::Collapsed);
@@ -230,12 +184,11 @@ HRESULT VisualTreeWatcher::ChangeLayout(std::wstring_view name, std::wstring_vie
 
 HRESULT AddSettingsPanel(Grid rootGrid)
 {
-	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintOpacity", RRF_RT_DWORD, NULL, &dwOpacity, &dwSize);
-	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"TintLuminosityOpacity", RRF_RT_DWORD, NULL, &dwLuminosity, &dwSize);
-	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideSearch", RRF_RT_DWORD, NULL, &dwHide, &dwSize);
-	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideBorder", RRF_RT_DWORD, NULL, &dwBorder, &dwSize);
-	RegGetValue(HKEY_CURRENT_USER, L"Software\\TranslucentSM", L"HideRecommended", RRF_RT_DWORD, NULL, &dwRec, &dwSize);
-
+	dwOpacity = GetVal(L"TintOpacity");
+	dwLuminosity = GetVal(L"TintLuminosityOpacity");
+	dwHide = GetVal(L"HideSearch");
+	dwBorder = GetVal(L"HideBorder");
+	dwRec = GetVal(L"HideRecommended");
 
 	static Border acrylicBorder = FindDescendantByName(rootGrid, L"AcrylicBorder").as<Border>();
 
@@ -275,21 +228,19 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 	RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\TranslucentSM", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subKey, NULL);
 
 	slider.ValueChanged([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-		auto sliderControl = sender.as<Slider>();
-		double sliderValue = sliderControl.Value();
-		DWORD val = sliderValue;
+		double sliderValue = sender.as<Slider>().Value();
 		acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
-		RegSetValueEx(subKey, TEXT("TintOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
-		});
+
+		SetVal(subKey, L"TintOpacity", sliderValue);
+	});
+
 	slider2.ValueChanged([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-		auto sliderControl = sender.as<Slider>();
-		double sliderValue = sliderControl.Value();
-		DWORD val = sliderValue;
+		double sliderValue = sender.as<Slider>().Value();
 		acrylicBorder.Background().as<AcrylicBrush>().TintLuminosityOpacity(double(sliderValue) / 100);
-		RegSetValueEx(subKey, TEXT("TintLuminosityOpacity"), 0, REG_DWORD, (const BYTE*)&val, sizeof(val));
+
+		SetVal(subKey, L"TintLuminosityOpacity", sliderValue);
 		});
 
-	static int pad = 0;
 	static bool rechide = false;
 	static bool srchhide = false;
 	
@@ -316,9 +267,10 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 				pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top;
 			}
 		}
+
+		// events
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-			DWORD ser = 1;
-			RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			SetVal(subKey, L"HideSearch", 1);
 			srchhide = true;
 
 			srchBox.Visibility(Visibility::Collapsed);
@@ -329,8 +281,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			});
 
 		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-			DWORD ser = 0;
-			RegSetValueEx(subKey, TEXT("HideSearch"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			SetVal(subKey, L"HideSearch", 0);
 			srchhide = false;
 
 			srchBox.Visibility(Visibility::Visible);
@@ -347,18 +298,15 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		checkBox.Content(box_value(L"Hide white border"));
 		stackPanel.Children().Append(checkBox);
 		if (dwBorder == 1)
-		{
 			checkBox.IsChecked(true);
-		}
+
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-			DWORD ser = 1;
-			RegSetValueEx(subKey, TEXT("HideBorder"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			SetVal(subKey, L"HideBorder", 1);
 			acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
 			});
 
 		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
-			DWORD ser = 0;
-			RegSetValueEx(subKey, TEXT("HideBorder"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+			SetVal(subKey, L"HideBorder", 0);
 			acrylicOverlay.Background().as<SolidColorBrush>().Opacity(1);
 			});
 	}
@@ -389,8 +337,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)
 			{
-				DWORD ser = 1;
-				RegSetValueEx(subKey, TEXT("HideRecommended"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+				SetVal(subKey, L"HideRecommended", 1);
 				rechide = true;
 
 				DependencyProperty heightProp = FrameworkElement::HeightProperty();
@@ -411,8 +358,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 
 		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)
 			{
-				DWORD ser = 0;
-				RegSetValueEx(subKey, TEXT("HideRecommended"), 0, REG_DWORD, (const BYTE*)&ser, sizeof(ser));
+				SetVal(subKey, L"HideRecommended", 0);
 				rechide = false;
 
 				suggHeader.Visibility(Visibility::Visible);

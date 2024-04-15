@@ -1,6 +1,7 @@
 #pragma once
 #include "framework.h"
 
+
 struct VisualTreeWatcher : winrt::implements<VisualTreeWatcher, IVisualTreeServiceCallback2, winrt::non_agile>
 {
 public:

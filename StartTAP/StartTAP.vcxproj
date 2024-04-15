@@ -181,6 +181,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Helpers.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="VisualTreeWatcher.h" />
   </ItemGroup>

@@ -1,19 +1,9 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "framework.h"
 #include "VisualTreeWatcher.h"
+#include "Helpers.h"
 
 using namespace winrt;
-
-template <typename T>
-T convert_from_abi(com_ptr<::IInspectable> from)
-{
-	T to{ nullptr }; // `T` is a projected type.
-
-	winrt::check_hresult(from->QueryInterface(winrt::guid_of<T>(),
-		winrt::put_abi(to)));
-
-	return to;
-}
 
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
