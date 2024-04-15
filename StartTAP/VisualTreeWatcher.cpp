@@ -108,7 +108,7 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 				static auto suggBtn = FindDescendantByName(topLevelRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
 				auto pinList = FromHandle<FrameworkElement>(element.Handle);
 
-				static double height = pinList.Height() + suggHeader.ActualHeight() + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad;
+				static double height = pinList.Height() + suggContainer.ActualHeight() + (suggBtn.ActualHeight()*2)+ pad;
 				if (token == NULL)
 				{
 					token = pinList.RegisterPropertyChangedCallback(FrameworkElement::HeightProperty(),
@@ -332,7 +332,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		static auto pinList = FindDescendantByName(topRoot, L"StartMenuPinnedList").as<FrameworkElement>();
 		
 		static auto pinH = pinList.Height();
-		static auto x = pinH + suggContainer.ActualHeight() + suggBtn.ActualHeight();
+		static auto x = pinH + suggContainer.ActualHeight() + (suggBtn.ActualHeight() * 2);
 
 
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)

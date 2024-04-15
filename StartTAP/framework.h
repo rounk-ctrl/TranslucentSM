@@ -14,6 +14,7 @@
 // winrt header files
 #define WINRT_LEAN_AND_MEAN
 #include <winrt/base.h>
+#undef GetCurrentTime
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.h>
