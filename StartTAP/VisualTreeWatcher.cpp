@@ -6,9 +6,13 @@ HRESULT AddSettingsPanel(Grid rootGrid);
 DWORD dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
 
 int64_t token = NULL;
+int64_t token_vis = NULL;
 static double pad = 15;
 static Thickness oldSrchMar;
 static double oldSrchHeight;
+
+static bool rechide = false;
+static bool srchhide = false;
 
 VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site)
 	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}),
@@ -91,11 +95,26 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			auto acrylicOverlay = FromHandle<Border>(element.Handle);
 			if (dwBorder == 1) acrylicOverlay.Background().as<SolidColorBrush>().Opacity(0);
 		}
-		else if (name == L"TopLevelSuggestionsListHeader" || name == L"SuggestionsParentContainer" || name == L"ShowMoreSuggestions")
+		else if (name == L"SuggestionsParentContainer" || name == L"ShowMoreSuggestions")
 		{
 			dwRec = GetVal(L"HideRecommended");
 			auto elmnt = FromHandle<FrameworkElement>(element.Handle);
 			if (dwRec == 1) elmnt.Visibility(Visibility::Collapsed);
+		}
+		else if (name == L"TopLevelSuggestionsListHeader")
+		{
+			dwRec = GetVal(L"HideRecommended");
+			auto elmnt = FromHandle<FrameworkElement>(element.Handle);
+			if (dwRec == 1) elmnt.Visibility(Visibility::Collapsed);
+			if (token_vis == NULL)
+			{
+				token_vis = elmnt.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(),
+					[](DependencyObject sender, DependencyProperty property)
+					{
+						auto element = sender.try_as<FrameworkElement>();
+						element.Visibility(rechide ? Visibility::Collapsed : Visibility::Visible);
+					});
+			}
 		}
 		else if (name == L"StartMenuPinnedList")
 		{
@@ -241,8 +260,6 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		SetVal(subKey, L"TintLuminosityOpacity", sliderValue);
 		});
 
-	static bool rechide = false;
-	static bool srchhide = false;
 
 	if (dwRec == 1) rechide = true;
 	if (dwHide == 1) srchhide = true;
@@ -317,12 +334,11 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		if (dwRec == 1)
 		{
 			checkBox.IsChecked(true);
-			rechide = true;
 		}
 
-		static auto suggHeader = FindDescendantByName(topRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
 		static auto suggContainer = FindDescendantByName(topRoot, L"SuggestionsParentContainer").as<FrameworkElement>();
 		static auto suggBtn = FindDescendantByName(topRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
+		static auto suggHeader = FindDescendantByName(topRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
 
 		static auto pinList = FindDescendantByName(topRoot, L"StartMenuPinnedList").as<FrameworkElement>();
 
