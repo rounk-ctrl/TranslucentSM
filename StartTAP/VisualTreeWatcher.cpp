@@ -7,6 +7,8 @@ DWORD dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBor
 
 int64_t token = NULL;
 static double pad = 15;
+static Thickness oldSrchMar;
+static double oldSrchHeight;
 
 VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site)
 	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}),
@@ -66,7 +68,13 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		{
 			dwHide = GetVal(L"HideSearch");
 			Control srch = FromHandle<Control>(element.Handle);
-			if (dwHide == 1) srch.Visibility(Visibility::Collapsed);
+			oldSrchMar = srch.Margin();
+			oldSrchHeight = srch.Height();
+			if (dwHide == 1)
+			{
+				srch.Height(0);
+				srch.Margin({0});
+			}
 
 			// recommended fix
 			if (dwHide == 1) pad = srch.ActualHeight() + srch.Padding().Bottom + srch.Padding().Top + 55;
@@ -100,18 +108,18 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 				static auto suggBtn = FindDescendantByName(topLevelRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
 				auto pinList = FromHandle<FrameworkElement>(element.Handle);
 
-				static double height = pinList.Height() + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad;
+				static double height = pinList.Height() + suggContainer.ActualHeight() + suggBtn.ActualHeight();
 				if (token == NULL)
 				{
 					token = pinList.RegisterPropertyChangedCallback(FrameworkElement::HeightProperty(),
 						[](DependencyObject sender, DependencyProperty property)
 						{
 							auto element = sender.try_as<FrameworkElement>();
-							element.Height(height);
+							element.Height(height + pad);
 						});
 				}
 
-				pinList.Height(height);
+				pinList.Height(height + pad);
 				suggHeader.Visibility(Visibility::Collapsed);
 				suggContainer.Visibility(Visibility::Collapsed);
 				suggBtn.Visibility(Visibility::Collapsed);
@@ -256,13 +264,13 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			srchhide = true;
 			pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top + 55;
 		}
-
 		// events
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
 			SetVal(subKey, L"HideSearch", 1);
 			srchhide = true;
 
-			srchBox.Visibility(Visibility::Collapsed);
+			srchBox.Height(0);
+			srchBox.Margin({ 0 });
 			pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top + 55;
 			});
 
@@ -270,7 +278,8 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			SetVal(subKey, L"HideSearch", 0);
 			srchhide = false;
 
-			srchBox.Visibility(Visibility::Visible);
+			srchBox.Height(oldSrchHeight);
+			srchBox.Margin(oldSrchMar);
 			pad = 15;
 			});
 	}
