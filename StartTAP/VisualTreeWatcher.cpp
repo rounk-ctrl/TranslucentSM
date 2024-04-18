@@ -1,22 +1,15 @@
 #include "VisualTreeWatcher.h"
 #include "Helpers.h"
 
-using namespace winrt;
-using namespace Windows::Foundation;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Media;
 
 HRESULT AddSettingsPanel(Grid rootGrid);
 DWORD dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
 
 int64_t token = NULL;
-static double pad = 0;
+static double pad = 15;
 
-VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site) 
-	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}), 
+VisualTreeWatcher::VisualTreeWatcher(winrt::com_ptr<IUnknown> site)
+	: m_selfPtr(this, winrt::take_ownership_from_abi_t{}),
 	m_XamlDiagnostics(site.as<IXamlDiagnostics>())
 {
 	this->AddRef();
@@ -76,8 +69,7 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 			if (dwHide == 1) srch.Visibility(Visibility::Collapsed);
 
 			// recommended fix
-			dwRec = GetVal(L"HideRecommended");
-			if (dwRec == 1) pad = srch.ActualHeight() + srch.Padding().Bottom + srch.Padding().Top;
+			if (dwHide == 1) pad = srch.ActualHeight() + srch.Padding().Bottom + srch.Padding().Top + 55;
 
 		}
 		else if (name == L"RootGrid")
@@ -108,7 +100,7 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 				static auto suggBtn = FindDescendantByName(topLevelRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
 				auto pinList = FromHandle<FrameworkElement>(element.Handle);
 
-				static double height = pinList.Height() + suggContainer.ActualHeight() + (suggBtn.ActualHeight()*2)+ pad;
+				static double height = pinList.Height() + suggContainer.ActualHeight() + suggBtn.ActualHeight() + pad;
 				if (token == NULL)
 				{
 					token = pinList.RegisterPropertyChangedCallback(FrameworkElement::HeightProperty(),
@@ -152,34 +144,34 @@ HRESULT VisualTreeWatcher::ChangeLayout(std::wstring_view name, std::wstring_vie
 		auto allAppsPanel = FindDescendantByName(allAppsRoot, L"AllAppsPanel");
 		auto sZoom = VisualTreeHelper::GetChild(allAppsPanel, 0).as<SemanticZoom>();
 		sZoom.Margin({ -32,0,0,0 });
-		}
+	}
 	else if (name == L"AllAppsPaneHeader")
 	{
 		Grid allAppsRoot = FromHandle<Grid>(element.Handle);
 		allAppsRoot.Margin({ 83,0,64,0 });
-		}
+	}
 	else if (name == L"AppsList")
 	{
 		auto appList = FromHandle<Control>(element.Handle);
 		appList.Padding({ 52,3,-32,32 });
-		}
+	}
 	else if (type == L"StartDocked.StartSizingFrame")
 	{
 		auto startFrame = FromHandle<Control>(element.Handle);
 		startFrame.MaxWidth(900);
 		startFrame.Width(900);
-		}
+	}
 	else if (name == L"TopLevelRoot")
 	{
 		auto topRoot = FromHandle<Grid>(element.Handle);
 		topRoot.Width(630);
 		topRoot.HorizontalAlignment(HorizontalAlignment::Right);
-		}
+	}
 	else if (name == L"ShowAllAppsButton" || name == L"CloseAllAppsButton")
 	{
 		auto btn = FromHandle<FrameworkElement>(element.Handle);
 		btn.Visibility(Visibility::Collapsed);
-		}
+	}
 }
 
 HRESULT AddSettingsPanel(Grid rootGrid)
@@ -232,7 +224,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		acrylicBorder.Background().as<AcrylicBrush>().TintOpacity(double(sliderValue) / 100);
 
 		SetVal(subKey, L"TintOpacity", sliderValue);
-	});
+		});
 
 	slider2.ValueChanged([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
 		double sliderValue = sender.as<Slider>().Value();
@@ -243,7 +235,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 
 	static bool rechide = false;
 	static bool srchhide = false;
-	
+
 	if (dwRec == 1) rechide = true;
 	if (dwHide == 1) srchhide = true;
 
@@ -262,10 +254,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		{
 			checkBox.IsChecked(true);
 			srchhide = true;
-			if (rechide)
-			{
-				pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top;
-			}
+			pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top + 55;
 		}
 
 		// events
@@ -274,10 +263,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			srchhide = true;
 
 			srchBox.Visibility(Visibility::Collapsed);
-			if (rechide)
-			{
-				pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top;
-			}
+			pad = srchBox.ActualHeight() + srchBox.Padding().Bottom + srchBox.Padding().Top + 55;
 			});
 
 		checkBox.Unchecked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&) {
@@ -285,7 +271,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 			srchhide = false;
 
 			srchBox.Visibility(Visibility::Visible);
-			if (!rechide) pad = 0;
+			pad = 15;
 			});
 	}
 
@@ -328,11 +314,11 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 		static auto suggHeader = FindDescendantByName(topRoot, L"TopLevelSuggestionsListHeader").as<FrameworkElement>();
 		static auto suggContainer = FindDescendantByName(topRoot, L"SuggestionsParentContainer").as<FrameworkElement>();
 		static auto suggBtn = FindDescendantByName(topRoot, L"ShowMoreSuggestions").as<FrameworkElement>();
-		
+
 		static auto pinList = FindDescendantByName(topRoot, L"StartMenuPinnedList").as<FrameworkElement>();
-		
+
 		static auto pinH = pinList.Height();
-		static auto x = pinH + suggContainer.ActualHeight() + (suggBtn.ActualHeight() * 2);
+		static auto x = pinH + suggContainer.ActualHeight() + suggBtn.ActualHeight();
 
 
 		checkBox.Checked([](Windows::Foundation::IInspectable const& sender, RoutedEventArgs const&)
@@ -371,7 +357,7 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 					pinList.UnregisterPropertyChangedCallback(heightProp, token);
 					token = NULL;
 				}
-				
+
 				int height = pinH;
 				pinList.Height(height);
 

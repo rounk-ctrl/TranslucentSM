@@ -1,9 +1,5 @@
 #pragma once
 #include "framework.h"
-using namespace winrt;
-using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Media;
 
 template <typename T>
 T convert_from_abi(com_ptr<::IInspectable> from)
