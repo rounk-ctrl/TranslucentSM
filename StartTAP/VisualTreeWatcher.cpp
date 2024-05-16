@@ -87,7 +87,10 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		else if (name == L"RootGrid")
 		{
 			Grid rootContent = FromHandle<Grid>(element.Handle);
-			AddSettingsPanel(rootContent);
+			if (GetVal(L"EditButton")==1)
+			{
+				AddSettingsPanel(rootContent);
+			}
 		}
 		else if (name == L"AcrylicOverlay")
 		{
