@@ -26,10 +26,7 @@ private:
 
 		return obj.as<T>();
 	}
-
-	// defined
-	HRESULT ChangeLayout(std::wstring_view name, std::wstring_view type, VisualElement element);
-
+	
 	winrt::com_ptr<IXamlDiagnostics> m_XamlDiagnostics;
 	winrt::com_ptr<VisualTreeWatcher> m_selfPtr;
 };
