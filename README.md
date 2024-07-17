@@ -2,6 +2,9 @@
 A lightweight utility that makes the Windows Start Menu translucent/transparent.<br>
 This app utilizes XAML Diagnostics to inject a dll into a process and modifies the XAML.
 
+> [!NOTE]
+> This project will be inactive for a while. I'm currently busy.
+
 # Settings
 For now it uses registry to store the values. You can find them at ```HKEY_CURRENT_USER\SOFTWARE\TranslucentSM```. <br>
 There are two features currently. All values must be between 1 and 9.<br>
