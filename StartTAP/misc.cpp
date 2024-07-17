@@ -150,14 +150,22 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 				SetVal(subKey, L"HideRecommended", 1);
 				rechide = true;
 
-				DependencyProperty heightProp = FrameworkElement::HeightProperty();
 				if (token == NULL)
 				{
-					token = pinList.RegisterPropertyChangedCallback(heightProp,
+					token = pinList.RegisterPropertyChangedCallback(FrameworkElement::HeightProperty(),
 						[](DependencyObject sender, DependencyProperty property)
 						{
 							auto element = sender.try_as<FrameworkElement>();
 							element.Height(x + pad);
+						});
+				}
+				if (token_vis == NULL)
+				{
+					token_vis = suggHeader.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(),
+						[](DependencyObject sender, DependencyProperty property)
+						{
+							auto element = sender.try_as<FrameworkElement>();
+							element.Visibility(Visibility::Collapsed);
 						});
 				}
 				pinList.Height(x + pad);
@@ -171,19 +179,22 @@ HRESULT AddSettingsPanel(Grid rootGrid)
 				SetVal(subKey, L"HideRecommended", 0);
 				rechide = false;
 
-				suggHeader.Visibility(Visibility::Visible);
 				suggContainer.Visibility(Visibility::Visible);
 				suggBtn.Visibility(Visibility::Visible);
 
-				DependencyProperty heightProp = FrameworkElement::HeightProperty();
 				if (token != NULL)
 				{
-					pinList.UnregisterPropertyChangedCallback(heightProp, token);
+					pinList.UnregisterPropertyChangedCallback(FrameworkElement::HeightProperty(), token);
 					token = NULL;
 				}
-
+				if (token_vis != NULL)
+				{
+					suggHeader.UnregisterPropertyChangedCallback(UIElement::VisibilityProperty(), token_vis);
+					token_vis = NULL;
+				}
 				int height = pinH;
 				pinList.Height(height);
+				suggHeader.Visibility(Visibility::Visible);
 
 			});
 	}

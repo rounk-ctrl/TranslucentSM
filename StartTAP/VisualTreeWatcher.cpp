@@ -5,6 +5,8 @@
 
 DWORD dwSize = sizeof(DWORD), dwOpacity = 0, dwLuminosity = 0, dwHide = 0, dwBorder = 0, dwRec = 0;
 
+double oldSrchHeight;
+Thickness oldSrchMar;
 int64_t token = NULL, token_vis = NULL;
 
 
@@ -103,15 +105,18 @@ HRESULT VisualTreeWatcher::OnVisualTreeChange(ParentChildRelation relation, Visu
 		{
 			dwRec = GetVal(L"HideRecommended");
 			auto elmnt = FromHandle<FrameworkElement>(element.Handle);
-			if (dwRec == 1) elmnt.Visibility(Visibility::Collapsed);
-			if (token_vis == NULL)
+			if (dwRec == 1)
 			{
-				token_vis = elmnt.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(),
-					[](DependencyObject sender, DependencyProperty property)
-					{
-						auto element = sender.try_as<FrameworkElement>();
-						element.Visibility(rechide ? Visibility::Collapsed : Visibility::Visible);
-					});
+				elmnt.Visibility(Visibility::Collapsed);
+				if (token_vis == NULL)
+				{
+					token_vis = elmnt.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(),
+						[](DependencyObject sender, DependencyProperty property)
+						{
+							auto element = sender.try_as<FrameworkElement>();
+							element.Visibility(Visibility::Collapsed);
+						});
+				}
 			}
 		}
 		else if (name == L"StartMenuPinnedList")

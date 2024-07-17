@@ -4,11 +4,10 @@
 // export variables
 extern int64_t token, token_vis;
 static double pad = 15;
-static Thickness oldSrchMar;
-static double oldSrchHeight;
 
+extern double oldSrchHeight;
+extern Thickness oldSrchMar;
 static bool rechide = false, srchhide = false;
-
 
 extern DWORD dwSize, dwOpacity, dwLuminosity, dwHide, dwBorder, dwRec;
 
