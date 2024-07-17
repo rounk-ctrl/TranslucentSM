@@ -1,6 +1,16 @@
 #pragma once
 #include "framework.h"
 
+// export variables
+extern int64_t token, token_vis;
+static double pad = 15;
+static Thickness oldSrchMar;
+static double oldSrchHeight;
+
+static bool rechide = false, srchhide = false;
+
+
+extern DWORD dwSize, dwOpacity, dwLuminosity, dwHide, dwBorder, dwRec;
 
 struct VisualTreeWatcher : winrt::implements<VisualTreeWatcher, IVisualTreeServiceCallback2, winrt::non_agile>
 {
